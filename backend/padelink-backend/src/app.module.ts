@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ProfesorModule } from './profesor/profesor.module';
 
 @Module({
   imports: [
@@ -14,7 +15,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
     database: 'test',
     entities: [],
     synchronize: true,
-  }),],
+  }),
+    ProfesorModule,],
   controllers: [AppController],
   providers: [AppService],
 })
