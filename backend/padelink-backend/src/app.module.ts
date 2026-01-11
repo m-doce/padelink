@@ -6,6 +6,7 @@ import { ProfesorModule } from './profesor/profesor.module';
 import { AlumnoModule } from './alumno/alumno.module';
 import { AdminModule } from './admin/admin.module';
 import { ReservaModule } from './reserva/reserva.module';
+import { ReseniaModule } from './resenia/resenia.module';
 
 @Module({
   imports: [
@@ -22,7 +23,8 @@ import { ReservaModule } from './reserva/reserva.module';
     ProfesorModule,
     AlumnoModule,
     AdminModule,
-    ReservaModule,],
+    ReservaModule,
+    ReseniaModule,],
   controllers: [AppController],
   providers: [AppService],
 })
