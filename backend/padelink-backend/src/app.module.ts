@@ -18,6 +18,7 @@ import { ReseniaModule } from './resenia/resenia.module';
     password: 'admin',
     database: 'test',
     entities: [],
+    autoLoadEntities: true,
     synchronize: true,
   }),
     ProfesorModule,
