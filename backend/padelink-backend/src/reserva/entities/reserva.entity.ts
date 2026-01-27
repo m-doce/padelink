@@ -1,6 +1,7 @@
-import { Column, PrimaryGeneratedColumn } from "typeorm";
+import { Entity, Column, PrimaryGeneratedColumn } from "typeorm";
 import { EstadoReserva } from "../domain/estado-reserva.enum";
 
+@Entity()
 export class Reserva {
 
     @PrimaryGeneratedColumn()
