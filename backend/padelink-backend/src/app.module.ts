@@ -6,8 +6,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ProfesorModule } from './profesor/profesor.module';
 import { AlumnoModule } from './alumno/alumno.module';
 import { AdminModule } from './admin/admin.module';
-import { ReservaModule } from './reserva/reserva.module';
 import { ReseniaModule } from './resenia/resenia.module';
+import { ClaseModule } from './clase/clase.module';
 
 @Module({
   imports: [
@@ -26,8 +26,8 @@ import { ReseniaModule } from './resenia/resenia.module';
     ProfesorModule,
     AlumnoModule,
     AdminModule,
-    ReservaModule,
-    ReseniaModule,],
+    ReseniaModule,
+    ClaseModule,],
   controllers: [AppController],
   providers: [AppService],
 })
