@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, ManyToOne, JoinColumn, Column, Timestamp } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, ManyToOne, JoinColumn, Column, Timestamp, JoinTable, ManyToMany } from 'typeorm';
 import { Profesor } from '../../profesor/profesor.entity';
 import { Club} from '../../club/entities/club.entity'
 import { Alumno } from '../../alumno/entities/alumno.entity';
@@ -24,7 +24,7 @@ export class Clase {
     club: Club;
 
     @Column({ nullable: false })
-    fecha_hora: Timestamp;
+    fecha_hora: Date;
 
     @Column({ nullable: false })
     duracion_minutos: number;       
@@ -38,12 +38,14 @@ export class Clase {
     @Column()
     descripcion: string;
 
-    @Column()
+    @ManyToMany(() => Alumno)
+    @JoinTable()
     alumnos_inscritos: Alumno[];
+
     
     @Column()
     estado: EstadoEnum;
 
     @Column({ default: () => 'CURRENT_TIMESTAMP' })
-    fecha_creacion: Timestamp;
+    fecha_creacion: Date;
 }

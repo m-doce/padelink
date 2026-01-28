@@ -18,7 +18,8 @@ export class Club {
     @Column()
     ciudad: string;
 
-    @Column({ default: () => 'CURRENT_TIMESTAMP' })
-    fecha_creacion: Timestamp;
+    @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+    fecha_creacion: Date;
+
 
 }
