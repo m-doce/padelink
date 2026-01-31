@@ -1,5 +1,5 @@
 import { Usuario } from 'src/usuario/entities/usuario.entity';
-import { Entity, Column, PrimaryGeneratedColumn, OneToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, PrimaryColumn, OneToOne, JoinColumn } from 'typeorm';
 
 export enum ManoDominante {
   diestro = 'diestro',
@@ -8,6 +8,10 @@ export enum ManoDominante {
 
 @Entity()
 export class Profesor {
+
+  @PrimaryColumn()
+  usuario_id: number;
+
  
   @OneToOne(() => Usuario, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'usuario_id' })
