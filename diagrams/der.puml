@@ -1,0 +1,94 @@
+@startuml PadeLink_DER
+
+!define TABLA(nombre) entity nombre << (T,#FFAAAA) >>
+
+TABLA(Usuario) {
+  id : INT [PK]
+  email : VARCHAR(255) [UNIQUE, NOT NULL]
+  password_hash : VARCHAR(255) [NOT NULL]
+  nombre : VARCHAR(100) [NOT NULL]
+  apellido : VARCHAR(100) [NOT NULL]
+  telefono : VARCHAR(20)
+  tipo_usuario : ENUM(admin, profesor, alumno) [NOT NULL]
+  fecha_registro : TIMESTAMP [DEFAULT NOW()]
+  activo : BOOLEAN [DEFAULT true]
+}
+
+TABLA(Profesor) {
+  id : INT [PK, FK]
+  usuario_id : INT [FK → Usuario]
+  bio : TEXT
+  precio_por_clase : DECIMAL(10,2) [NOT NULL]
+  mano_dominante : ENUM(diestro, zurdo)
+  link_ajpp : VARCHAR(255)
+  promedio_calificacion : DECIMAL(3,2)
+  fecha_creacion : TIMESTAMP [DEFAULT NOW()]
+}
+
+TABLA(Alumno) {
+  id : INT [PK, FK]
+  usuario_id : INT [FK → Usuario]
+  nivel : ENUM(principiante, intermedio, avanzado) [NOT NULL]
+  mano_dominante : ENUM(diestro, zurdo)
+  genero : ENUM(masculino, femenino, otro)
+  edad : INT
+  posicion_cancha : VARCHAR(50)
+  promedio_calificacion : DECIMAL(3,2)
+  fecha_creacion : TIMESTAMP [DEFAULT NOW()]
+}
+
+TABLA(Club) {
+  id : INT [PK]
+  nombre : VARCHAR(100) [NOT NULL]
+  ubicacion : VARCHAR(255) [NOT NULL]
+  ciudad : VARCHAR(100)
+  descripcion : TEXT
+  fecha_creacion : TIMESTAMP [DEFAULT NOW()]
+}
+
+TABLA(Clase) {
+  id : INT [PK]
+  profesor_id : INT [FK → Profesor]
+  club_id : INT [FK → Club]
+  fecha_hora : TIMESTAMP [NOT NULL]
+  duracion_minutos : INT [NOT NULL]
+  nivel : INT [FK → Categoría]
+  capacidad_maxima : INT [NOT NULL]
+  estado : ENUM(disponible, completa, cancelada) [NOT NULL]
+  descripcion : TEXT
+  fecha_creacion : TIMESTAMP [DEFAULT NOW()]
+}
+
+TABLA(Reserva) {
+  id : INT [PK]
+  alumno_id : INT [FK → Alumno]
+  clase_id : INT [FK → Clase]
+  fecha_reserva : TIMESTAMP [DEFAULT NOW()]
+  estado : ENUM(confirmada, cancelada, completada) [NOT NULL]
+  notas : TEXT
+}
+
+TABLA(Reseña) {
+  id : INT [PK]
+  autor_id : INT [FK → Usuario]
+  destino_id : INT [FK → Usuario]
+  clase_id : INT [FK → Clase]
+  calificacion : INT [1-5, NOT NULL]
+  comentario : TEXT
+  fecha_creacion : TIMESTAMP [DEFAULT NOW()]
+  tipo : ENUM(alumno_a_profesor, profesor_a_alumno) [NOT NULL]
+}
+
+
+
+Usuario ||--|| Profesor : "es"
+Usuario ||--|| Alumno : "es"
+Profesor ||--o{ Clase : "imparte"
+Club ||--o{ Clase : "alberga"
+Alumno ||--o{ Reserva : "realiza"
+Clase ||--o{ Reserva : "tiene"
+Usuario ||--o{ Reseña : "escribe"
+Usuario ||--o{ Reseña : "recibe"
+Clase ||--o{ Reseña : "genera"
+
+@enduml
