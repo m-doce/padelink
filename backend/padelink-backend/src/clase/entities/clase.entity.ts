@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, ManyToOne, JoinColumn, Column, Timestamp, JoinTable, ManyToMany } from 'typeorm';
-import { Profesor } from '../../profesor/profesor.entity';
+import { Profesor } from '../../profesor/entities/profesor.entity';
 import { Club} from '../../club/entities/club.entity'
 import { Alumno } from '../../alumno/entities/alumno.entity';
 
