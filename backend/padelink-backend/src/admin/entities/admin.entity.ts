@@ -3,10 +3,9 @@ import { Entity, OneToOne, JoinColumn, PrimaryColumn } from 'typeorm';
 
 @Entity()
 export class Admin {
-  @PrimaryColumn()
-  usuarioId: number;
 
-  @OneToOne(() => Usuario)
-  @JoinColumn({ name: 'usuarioId' })
-  usuario: Usuario;
+  @OneToOne(() => Usuario, {onDelete: 'CASCADE'})
+  @JoinColumn({name: 'usuarioId'})
+  usuarioId: Usuario;
+  
 }

@@ -1,7 +1,7 @@
 import { Clase } from 'src/clase/entities/clase.entity';
 import { ManoDominante } from 'src/profesor/entities/profesor.entity';
 import { Usuario } from 'src/usuario/entities/usuario.entity';
-import { Entity, JoinColumn, Column, ManyToMany, OneToOne, PrimaryGeneratedColumn, Decimal128 } from 'typeorm';
+import { Entity, JoinColumn, Column, OneToOne } from 'typeorm';
 
 export enum Genero {
   MASCULINO = 'MASCULINO',
