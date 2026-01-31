@@ -8,12 +8,10 @@ export enum ManoDominante {
 
 @Entity()
 export class Profesor {
-  @PrimaryGeneratedColumn()
-  id: number;
-
+ 
   @OneToOne(() => Usuario, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'usuario_id' })
-  usuario: Usuario;
+  usuarioId: Usuario;
 
   @Column({ type: 'text', nullable: true })
   bio: string;
