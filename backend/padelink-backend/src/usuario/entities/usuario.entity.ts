@@ -5,15 +5,28 @@ export class Usuario {
  @PrimaryGeneratedColumn()
  id: number;
  
- @Column()
- nombreUsuario: string;
+ @Column({default: true})
+ activo: boolean;
 
- @Column ({ unique : true})
+ @Column()
  email: string;
 
  @Column()
  password: string;
 
  @Column()
+ nombre: string;
+
+ @Column()
+ apellido: string;
+
+ @Column()
+ telefono: string;
+
+ @Column()
  tipoUsuario: string;
+
+ @Column({default: () => 'CURRENT_TIMESTAMP'})
+ fecha_registro: Date;
+
 }
