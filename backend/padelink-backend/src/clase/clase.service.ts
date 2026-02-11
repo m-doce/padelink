@@ -14,7 +14,7 @@ export class ClaseService {
   ) {}
 
   async create(createClaseDto: CreateClaseDto) {
-    return this.claseRepository.create(createClaseDto);
+    return this.claseRepository.save(createClaseDto);
   }
   
   async findAll() {
