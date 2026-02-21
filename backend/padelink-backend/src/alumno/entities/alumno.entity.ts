@@ -15,12 +15,10 @@ export enum Posicion{
 @Entity()
 export class Alumno {
 
+    @OneToOne(() => Usuario, { onDelete: 'CASCADE' })
+    @JoinColumn({ name: 'usuario_id' })
     @PrimaryColumn()
-    usuario_id: number;
-
-    @OneToOne(() => Usuario, {onDelete: 'CASCADE'})
-    @JoinColumn({name: 'usuarioId'})
-    usuarioId: Usuario;
+    usuario: Usuario;
 
     @Column()
     edad: number;
