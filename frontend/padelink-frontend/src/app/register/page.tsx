@@ -2,12 +2,15 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 type UserType = "alumno" | "profesor";
 
 type RegisterFormState = {
-  nombreUsuario: string;
+  nombre: string;
+  apellido: string;
   email: string;
+  telefono: string;
   password: string;
   tipoUsuario: UserType;
 };
@@ -19,8 +22,10 @@ type FormErrors = Partial<Record<keyof RegisterFormState, string>> & {
 export default function RegisterPage() {
   const router = useRouter();
   const [form, setForm] = useState<RegisterFormState>({
-    nombreUsuario: "",
+    nombre: "",
+    apellido: "",
     email: "",
+    telefono: "",
     password: "",
     tipoUsuario: "alumno",
   });
@@ -40,24 +45,21 @@ export default function RegisterPage() {
   function validate(values: RegisterFormState): FormErrors {
     const newErrors: FormErrors = {};
 
-    if (!values.nombreUsuario.trim()) {
-      newErrors.nombreUsuario = "El nombre es obligatorio";
-    }
-
+    if (!values.nombre.trim()) newErrors.nombre = "El nombre es obligatorio";
+    if (!values.apellido.trim()) newErrors.apellido = "El apellido es obligatorio";
+    
     if (!values.email.trim()) {
       newErrors.email = "El email es obligatorio";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) {
       newErrors.email = "El email no es válido";
     }
 
+    if (!values.telefono.trim()) newErrors.telefono = "El teléfono es obligatorio";
+
     if (!values.password.trim()) {
       newErrors.password = "La contraseña es obligatoria";
     } else if (values.password.length < 6) {
       newErrors.password = "La contraseña debe tener al menos 6 caracteres";
-    }
-
-    if (!values.tipoUsuario) {
-      newErrors.tipoUsuario = "Debes seleccionar un tipo de usuario";
     }
 
     return newErrors;
@@ -96,7 +98,7 @@ export default function RegisterPage() {
         return;
       }
 
-      router.push("/");
+      router.push("/login");
     } catch {
       setErrors({
         general:
@@ -108,122 +110,133 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 dark:bg-black">
-      <main className="w-full max-w-md rounded-xl bg-white p-8 shadow-md dark:bg-zinc-900">
-        <h1 className="mb-6 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
-          Crear cuenta
-        </h1>
+    <div className="flex min-h-screen items-center justify-center bg-zinc-50 dark:bg-black font-sans">
+      <main className="w-full max-w-md rounded-xl bg-white p-8 shadow-md dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+        <div className="mb-6 text-center">
+          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+            Crear cuenta
+          </h1>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-2">
+            Únete a la comunidad de PadeLink
+          </p>
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="flex flex-col gap-1">
-            <label
-              htmlFor="nombreUsuario"
-              className="text-sm font-medium text-zinc-800 dark:text-zinc-200"
-            >
-              Nombre de usuario
-            </label>
-            <input
-              id="nombreUsuario"
-              type="text"
-              value={form.nombreUsuario}
-              onChange={(event) =>
-                handleChange("nombreUsuario", event.target.value)
-              }
-              className="rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 outline-none transition focus:border-zinc-800 focus:ring-1 focus:ring-zinc-800 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50"
-              autoComplete="username"
-            />
-            {errors.nombreUsuario && (
-              <p className="text-xs text-red-600">{errors.nombreUsuario}</p>
-            )}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
+                Nombre
+              </label>
+              <input
+                type="text"
+                value={form.nombre}
+                onChange={(e) => handleChange("nombre", e.target.value)}
+                className="rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-lime-500 focus:ring-1 focus:ring-lime-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
+              />
+              {errors.nombre && <p className="text-xs text-red-600">{errors.nombre}</p>}
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
+                Apellido
+              </label>
+              <input
+                type="text"
+                value={form.apellido}
+                onChange={(e) => handleChange("apellido", e.target.value)}
+                className="rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-lime-500 focus:ring-1 focus:ring-lime-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
+              />
+              {errors.apellido && <p className="text-xs text-red-600">{errors.apellido}</p>}
+            </div>
           </div>
 
           <div className="flex flex-col gap-1">
-            <label
-              htmlFor="email"
-              className="text-sm font-medium text-zinc-800 dark:text-zinc-200"
-            >
+            <label className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
               Email
             </label>
             <input
-              id="email"
               type="email"
               value={form.email}
-              onChange={(event) => handleChange("email", event.target.value)}
-              className="rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 outline-none transition focus:border-zinc-800 focus:ring-1 focus:ring-zinc-800 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50"
-              autoComplete="email"
+              onChange={(e) => handleChange("email", e.target.value)}
+              className="rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-lime-500 focus:ring-1 focus:ring-lime-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
             />
-            {errors.email && (
-              <p className="text-xs text-red-600">{errors.email}</p>
-            )}
+            {errors.email && <p className="text-xs text-red-600">{errors.email}</p>}
           </div>
 
           <div className="flex flex-col gap-1">
-            <label
-              htmlFor="password"
-              className="text-sm font-medium text-zinc-800 dark:text-zinc-200"
-            >
+            <label className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
+              Teléfono
+            </label>
+            <input
+              type="tel"
+              value={form.telefono}
+              onChange={(e) => handleChange("telefono", e.target.value)}
+              className="rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-lime-500 focus:ring-1 focus:ring-lime-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
+            />
+            {errors.telefono && <p className="text-xs text-red-600">{errors.telefono}</p>}
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
               Contraseña
             </label>
             <input
-              id="password"
               type="password"
               value={form.password}
-              onChange={(event) =>
-                handleChange("password", event.target.value)
-              }
-              className="rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 outline-none transition focus:border-zinc-800 focus:ring-1 focus:ring-zinc-800 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50"
-              autoComplete="new-password"
+              onChange={(e) => handleChange("password", e.target.value)}
+              className="rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-lime-500 focus:ring-1 focus:ring-lime-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
             />
-            {errors.password && (
-              <p className="text-xs text-red-600">{errors.password}</p>
-            )}
+            {errors.password && <p className="text-xs text-red-600">{errors.password}</p>}
           </div>
 
           <div className="flex flex-col gap-1">
             <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
-              Tipo de usuario
+              Soy...
             </span>
             <div className="flex gap-3">
-              <label className="flex flex-1 cursor-pointer items-center gap-2 rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-800 transition hover:border-zinc-800 dark:border-zinc-700 dark:text-zinc-100 dark:hover:border-zinc-400">
+              <label className={`flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm transition ${form.tipoUsuario === 'alumno' ? 'border-lime-500 bg-lime-50 text-lime-700 dark:bg-lime-900/20 dark:text-lime-400' : 'border-zinc-300 hover:border-zinc-400 dark:border-zinc-700 dark:text-zinc-300'}`}>
                 <input
                   type="radio"
                   name="tipoUsuario"
                   value="alumno"
                   checked={form.tipoUsuario === "alumno"}
                   onChange={() => handleChange("tipoUsuario", "alumno")}
-                  className="h-4 w-4"
+                  className="hidden"
                 />
                 Alumno
               </label>
-              <label className="flex flex-1 cursor-pointer items-center gap-2 rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-800 transition hover:border-zinc-800 dark:border-zinc-700 dark:text-zinc-100 dark:hover:border-zinc-400">
+              <label className={`flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm transition ${form.tipoUsuario === 'profesor' ? 'border-lime-500 bg-lime-50 text-lime-700 dark:bg-lime-900/20 dark:text-lime-400' : 'border-zinc-300 hover:border-zinc-400 dark:border-zinc-700 dark:text-zinc-300'}`}>
                 <input
                   type="radio"
                   name="tipoUsuario"
                   value="profesor"
                   checked={form.tipoUsuario === "profesor"}
                   onChange={() => handleChange("tipoUsuario", "profesor")}
-                  className="h-4 w-4"
+                  className="hidden"
                 />
                 Profesor
               </label>
             </div>
-            {errors.tipoUsuario && (
-              <p className="text-xs text-red-600">{errors.tipoUsuario}</p>
-            )}
           </div>
 
           {errors.general && (
-            <p className="text-sm text-red-600">{errors.general}</p>
+            <p className="text-sm text-red-600 text-center">{errors.general}</p>
           )}
 
           <button
             type="submit"
             disabled={submitting}
-            className="flex h-11 w-full items-center justify-center rounded-md bg-zinc-900 text-sm font-medium text-zinc-50 transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-70 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
+            className="w-full rounded-md bg-zinc-900 py-2.5 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:opacity-70 dark:bg-lime-400 dark:text-zinc-900 dark:hover:bg-lime-500"
           >
-            {submitting ? "Creando cuenta..." : "Registrarse"}
+            {submitting ? "Registrando..." : "Crear cuenta"}
           </button>
         </form>
+
+        <p className="mt-6 text-center text-sm text-zinc-500 dark:text-zinc-400">
+          ¿Ya tienes cuenta?{" "}
+          <Link href="/login" className="font-medium text-lime-600 hover:underline dark:text-lime-400">
+            Inicia sesión
+          </Link>
+        </p>
       </main>
     </div>
   );
