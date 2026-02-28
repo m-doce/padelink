@@ -3,6 +3,7 @@ import { Entity, PrimaryGeneratedColumn, Column, Timestamp } from "typeorm";
 @Entity()
 export class Club {
 
+
     @PrimaryGeneratedColumn()
     club_id: number;
 
