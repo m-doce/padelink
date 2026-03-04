@@ -1,7 +1,7 @@
 import { Clase } from 'src/clase/entities/clase.entity';
 import { ManoDominante } from 'src/profesor/entities/profesor.entity';
 import { Usuario } from 'src/usuario/entities/usuario.entity';
-import { Entity, JoinColumn, Column, OneToOne, PrimaryColumn } from 'typeorm';
+import { Entity, JoinColumn, Column, OneToOne, PrimaryColumn, ManyToMany } from 'typeorm';
 
 export enum Genero {
   MASCULINO = 'MASCULINO',
@@ -21,6 +21,9 @@ export class Alumno {
     @OneToOne(() => Usuario, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'usuario_id' })
     usuario: Usuario;
+
+    @ManyToMany(() => Clase, (clase) => clase.alumnos_inscritos)
+    clases: Clase[];
 
     @Column({ nullable: true })
     edad: number;
