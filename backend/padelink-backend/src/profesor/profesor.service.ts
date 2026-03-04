@@ -16,8 +16,10 @@ export class ProfesorService {
         return this.profesorRepository.find();
     }
 
-    async create(createProfesorDto: CreateProfesorDto) {
-        const profesor = await this.profesorRepository.create(createProfesorDto);
+    async create(usuario_id: number) {
+        const profesor = await this.profesorRepository.create({
+            usuario_id,
+        });
         return this.profesorRepository.save(profesor);
     }
 

@@ -9,6 +9,7 @@ import { AdminModule } from './admin/admin.module';
 import { ReseniaModule } from './resenia/resenia.module';
 import { ClaseModule } from './clase/clase.module';
 import { ClubModule } from './club/club.module';
+import { UserModule } from './usuario/user.module';
 
 @Module({
   imports: [
@@ -29,7 +30,9 @@ import { ClubModule } from './club/club.module';
     AdminModule,
     ReseniaModule,
     ClaseModule,
-    ClubModule,],
+    ClubModule,
+    UserModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

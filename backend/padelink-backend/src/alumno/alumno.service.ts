@@ -26,4 +26,10 @@ export class AlumnoService {
         return this.alumnoRepository.update(id, updateAlumnoDto);
     }
     
+    async create(usuario_id: number) {
+        const alumno = this.alumnoRepository.create({
+            usuario_id,
+        });
+        return this.alumnoRepository.save(alumno);
+    }
 }
