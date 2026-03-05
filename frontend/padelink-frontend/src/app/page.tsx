@@ -1,33 +1,10 @@
 import Link from "next/link";
+import Navbar from "@/components/Navbar";
 
 export default function Home() {
   return (
     <div className="flex min-h-screen flex-col bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-50 font-sans">
-      {/* Navbar */}
-      <header className="flex h-16 items-center justify-between border-b border-zinc-200 dark:border-zinc-800 px-6 lg:px-12 sticky top-0 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md z-10">
-        <div className="flex items-center gap-2">
-          {/* Logo placeholder - maybe a padel racket icon later */}
-          <div className="h-8 w-8 rounded-full bg-lime-400 flex items-center justify-center">
-             <span className="font-bold text-zinc-900">P</span>
-          </div>
-          <span className="text-xl font-bold tracking-tight">PadeLink</span>
-        </div>
-        <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-zinc-600 dark:text-zinc-400">
-          <Link href="/professors" className="hover:text-lime-600 dark:hover:text-lime-400 transition-colors">
-            Profesores
-          </Link>
-          <Link href="/login" className="hover:text-lime-600 dark:hover:text-lime-400 transition-colors">
-            Iniciar Sesión
-          </Link>
-          <Link
-            href="/register"
-            className="rounded-full bg-zinc-900 px-4 py-2 text-zinc-50 transition-colors hover:bg-zinc-700 dark:bg-lime-400 dark:text-zinc-900 dark:hover:bg-lime-500"
-          >
-            Registrarse
-          </Link>
-        </nav>
-        {/* Mobile menu button could go here */}
-      </header>
+      <Navbar />
 
       <main className="flex-1">
         {/* Hero Section */}
