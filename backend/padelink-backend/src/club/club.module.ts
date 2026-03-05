@@ -8,5 +8,6 @@ import { Club } from './entities/club.entity';
   imports: [TypeOrmModule.forFeature([Club])],
   controllers: [ClubController],
   providers: [ClubService],
+  exports: [ClubService],
 })
 export class ClubModule {}

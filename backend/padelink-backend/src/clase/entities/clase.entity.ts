@@ -9,6 +9,11 @@ export enum EstadoEnum {
     COMPLETA = 'COMPLETA',
 }
 
+export enum TipoEnum {
+    CERRADA = 'CERRADA',
+    GRUPAL = 'GRUPAL',
+}
+
 @Entity()
 export class Clase {
 
@@ -42,7 +47,9 @@ export class Clase {
     @JoinTable()
     alumnos_inscritos: Alumno[];
 
-    
+    @Column()
+    tipo_clase: TipoEnum;
+
     @Column()
     estado: EstadoEnum;
 

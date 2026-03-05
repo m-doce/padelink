@@ -1,7 +1,7 @@
 import { Clase } from 'src/clase/entities/clase.entity';
 import { ManoDominante } from 'src/profesor/entities/profesor.entity';
 import { Usuario } from 'src/usuario/entities/usuario.entity';
-import { Entity, JoinColumn, Column, OneToOne, PrimaryColumn } from 'typeorm';
+import { Entity, JoinColumn, Column, OneToOne, PrimaryColumn, ManyToMany } from 'typeorm';
 
 export enum Genero {
   MASCULINO = 'MASCULINO',
@@ -18,30 +18,31 @@ export class Alumno {
     @PrimaryColumn()
     usuario_id: number;
 
-    @OneToOne(() => Usuario, {onDelete: 'CASCADE'})
-    @JoinColumn({name: 'usuarioId'})
-    usuarioId: Usuario;
+    @OneToOne(() => Usuario, { onDelete: 'CASCADE' })
+    @JoinColumn({ name: 'usuario_id' })
+    usuario: Usuario;
 
-    @Column()
+    @ManyToMany(() => Clase, (clase) => clase.alumnos_inscritos)
+    clases: Clase[];
+
+    @Column({ nullable: true })
     edad: number;
 
-    @Column()
+    @Column({ nullable: true })
     nivel: number;
 
-    @Column({type: 'enum', enum: ManoDominante})
+    @Column({ type: 'enum', enum: ManoDominante, nullable: true })
     mano_dominante: ManoDominante;
 
-    @Column({type: 'enum', enum: Genero})
+    @Column({ type: 'enum', enum: Genero, nullable: true })
     genero: Genero;
 
-    @Column({type: 'enum', enum: Posicion})
+    @Column({ type: 'enum', enum: Posicion, nullable: true })
     posicion: Posicion;
 
-    @Column({ type: 'decimal', precision: 3, scale: 2 })
+    @Column({ type: 'decimal', precision: 3, scale: 2, nullable: true })
     promedio_calificacion: number;
 
     @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
     fechaCreacion: Date;
-
-
 }

@@ -14,10 +14,6 @@ export class ProfesorController {
         return this.profesorService.findAll();
     }
 
-    @Post()
-    create(@Body() createProfesorDto: CreateProfesorDto) {
-        return this.profesorService.create(createProfesorDto);
-    }
 
     @Get(':id')
     findOne(@Param('id') id: number) {

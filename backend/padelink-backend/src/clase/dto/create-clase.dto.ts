@@ -1,4 +1,5 @@
 import { IsDateString, IsInt, IsNotEmpty, IsOptional, IsString, IsEnum, Min, Max } from 'class-validator';
+import { TipoEnum } from '../entities/clase.entity';
 import { EstadoEnum } from '../entities/clase.entity';
 
 export class CreateClaseDto {
@@ -30,6 +31,10 @@ export class CreateClaseDto {
   @IsString()
   @IsOptional()
   descripcion?: string;
+
+  @IsEnum(TipoEnum)
+  @IsNotEmpty()
+  tipo_clase: TipoEnum;
 
   @IsEnum(EstadoEnum)
   @IsOptional()

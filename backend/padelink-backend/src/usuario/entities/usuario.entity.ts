@@ -1,5 +1,12 @@
 import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
 
+export enum UserRole {
+  ALUMNO = 'ALUMNO',
+  PROFESOR = 'PROFESOR',
+  ADMIN = 'ADMIN',
+}
+
+
 @Entity()
 export class Usuario {
  @PrimaryGeneratedColumn()
@@ -23,8 +30,11 @@ export class Usuario {
  @Column()
  telefono: string;
 
- @Column()
- tipoUsuario: string;
+ @Column({
+    type: 'enum',
+    enum: UserRole,
+ })
+ tipoUsuario: UserRole;
 
  @Column({default: () => 'CURRENT_TIMESTAMP'})
  fecha_registro: Date;
