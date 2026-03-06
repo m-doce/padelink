@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import Navbar from "@/components/Navbar";
 
 // Mock types based on your entities
 type Usuario = {
@@ -84,29 +85,7 @@ export default function ProfessorsPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-zinc-50 dark:bg-zinc-950 font-sans text-zinc-900 dark:text-zinc-50">
-      {/* Navbar (Reusable component in future) */}
-      <header className="flex h-16 items-center justify-between border-b border-zinc-200 dark:border-zinc-800 px-6 lg:px-12 sticky top-0 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md z-10">
-        <Link href="/" className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-full bg-lime-400 flex items-center justify-center">
-            <span className="font-bold text-zinc-900">P</span>
-          </div>
-          <span className="text-xl font-bold tracking-tight">PadeLink</span>
-        </Link>
-        <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-zinc-600 dark:text-zinc-400">
-          <Link href="/professors" className="text-lime-600 dark:text-lime-400 font-semibold">
-            Profesores
-          </Link>
-          <Link href="/login" className="hover:text-lime-600 dark:hover:text-lime-400 transition-colors">
-            Iniciar Sesión
-          </Link>
-          <Link
-            href="/register"
-            className="rounded-full bg-zinc-900 px-4 py-2 text-zinc-50 transition-colors hover:bg-zinc-700 dark:bg-lime-400 dark:text-zinc-900 dark:hover:bg-lime-500"
-          >
-            Registrarse
-          </Link>
-        </nav>
-      </header>
+      <Navbar />
 
       <main className="container mx-auto px-6 py-12 lg:px-12">
         {/* Header Section */}
@@ -137,7 +116,7 @@ export default function ProfessorsPage() {
           </div>
         </div>
 
-        {/* Grid Gallery */}
+                {/* Grid Gallery */}
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filteredProfessors.map((prof) => (
             <div
@@ -160,9 +139,11 @@ export default function ProfessorsPage() {
               {/* Card Body */}
               <div className="mt-10 flex flex-1 flex-col px-6 pb-6 pt-2">
                 <div className="mb-4">
-                  <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-50">
-                    {prof.usuario.nombre} {prof.usuario.apellido}
-                  </h3>
+                  <Link href={`/professors/${prof.id}`} className="hover:text-lime-600 dark:hover:text-lime-400 transition-colors">
+                    <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-50">
+                      {prof.usuario.nombre} {prof.usuario.apellido}
+                    </h3>
+                  </Link>
                   <div className="mt-1 flex flex-wrap gap-2">
                     <span className="inline-flex items-center rounded-md bg-zinc-100 px-2 py-1 text-xs font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
                       {prof.manoDominante === "diestro" ? "Diestro ✋" : "Zurdo 🤚"}
@@ -186,9 +167,12 @@ export default function ProfessorsPage() {
                       ${prof.precioPorClase}
                     </span>
                   </div>
-                  <button className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-700 dark:bg-lime-400 dark:text-zinc-900 dark:hover:bg-lime-500">
+                  <Link 
+                    href={`/professors/${prof.id}`}
+                    className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-700 dark:bg-lime-400 dark:text-zinc-900 dark:hover:bg-lime-500"
+                  >
                     Ver Perfil
-                  </button>
+                  </Link>
                 </div>
               </div>
             </div>
