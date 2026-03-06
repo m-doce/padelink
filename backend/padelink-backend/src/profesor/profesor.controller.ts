@@ -1,10 +1,12 @@
 import { ProfesorService } from './profesor.service';
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
 import { CreateProfesorDto } from './dto/create-profesor.dto';
 import { UpdateProfesorDto } from './dto/update-profesor';
+import { AuthGuard } from '@nestjs/passport';
 
 
 @Controller('profesor')
+@UseGuards(AuthGuard('jwt'))
 export class ProfesorController {
 
     constructor(private readonly profesorService: ProfesorService){}
