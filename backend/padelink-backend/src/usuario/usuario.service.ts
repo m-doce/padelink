@@ -6,7 +6,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
 import { AlumnoService } from '../alumno/alumno.service';
 import { ProfesorService } from '../profesor/profesor.service';
-
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UserService {
@@ -26,14 +26,25 @@ export class UserService {
         return this.userRepository.findOne({ where: { id } });
     }
 
+    async findByEmail(email: string): Promise<Usuario | null> {
+        return this.userRepository.findOne({ where: { email } });
+    }
+
     async update(id: number, updateUsuarioDto: UpdateUsuarioDto): Promise<Usuario | null> {
+        if (updateUsuarioDto.password) {
+            updateUsuarioDto.password = await bcrypt.hash(updateUsuarioDto.password, 10);
+        }
         await this.userRepository.update(id, updateUsuarioDto);
         return this.userRepository.findOne({where: {id}});
     }
 
     async create(createUsuarioDto: CreateUsuarioDto): Promise<Usuario> {
         try{
-            const user = this.userRepository.create(createUsuarioDto);
+            const hashedPassword = await bcrypt.hash(createUsuarioDto.password, 10);
+            const user = this.userRepository.create({
+                ...createUsuarioDto,
+                password: hashedPassword,
+            });
             const savedUser = await this.userRepository.save(user);
             switch(createUsuarioDto.tipoUsuario) {
                 case UserRole.ALUMNO:

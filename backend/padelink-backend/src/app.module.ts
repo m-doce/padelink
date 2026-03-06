@@ -10,6 +10,7 @@ import { ReseniaModule } from './resenia/resenia.module';
 import { ClaseModule } from './clase/clase.module';
 import { ClubModule } from './club/club.module';
 import { UserModule } from './usuario/user.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { UserModule } from './usuario/user.module';
     ClaseModule,
     ClubModule,
     UserModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

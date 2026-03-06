@@ -13,7 +13,8 @@ import { ProfesorModule } from '../profesor/profesor.module';
     ProfesorModule,
   ],
   controllers: [UserController],
-  providers: [UserService]
+  providers: [UserService],
+  exports: [UserService],
 })
 export class UserModule {
     
