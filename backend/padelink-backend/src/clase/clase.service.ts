@@ -1,8 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { CreateClaseDto } from './dto/create-clase.dto';
 import { UpdateClaseDto } from './dto/update-clase.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Clase } from './entities/clase.entity';
+import { Clase, EstadoEnum } from './entities/clase.entity';
 import { In, Repository } from 'typeorm';
 import { ProfesorService } from '../profesor/profesor.service';
 import { ClubService } from '../club/club.service';
@@ -53,6 +53,45 @@ export class ClaseService {
     });
 
     return this.claseRepository.save(nuevaClase);
+  }
+
+  async reservarClase(claseId: number, usuarioId: number) {
+    // 1. Buscamos la clase con sus alumnos inscritos
+    const clase = await this.claseRepository.findOne({ 
+      where: { id: claseId },
+      relations: ['alumnos_inscritos'] 
+    });
+
+    if (!clase) {
+      throw new NotFoundException('Clase no encontrada');
+    }
+
+    // 2. Buscamos al alumno por su usuario_id
+    const alumno = await this.alumnoRepository.findOne({ where: { usuario_id: usuarioId } });
+    if (!alumno) {
+      throw new NotFoundException('Perfil de alumno no encontrado');
+    }
+
+    // 3. Verificamos si ya está inscrito
+    const yaInscrito = clase.alumnos_inscritos.some(a => a.usuario_id === usuarioId);
+    if (yaInscrito) {
+      throw new BadRequestException('Ya estás inscrito en esta clase');
+    }
+
+    // 4. Verificamos capacidad
+    if (clase.alumnos_inscritos.length >= clase.capacidad_maxima) {
+      throw new BadRequestException('La clase está completa');
+    }
+
+    // 5. Agregamos al alumno y guardamos
+    clase.alumnos_inscritos.push(alumno);
+    
+    // Actualizamos el estado si se completó la capacidad
+    if (clase.alumnos_inscritos.length === clase.capacidad_maxima) {
+      clase.estado = EstadoEnum.COMPLETA;
+    }
+
+    return this.claseRepository.save(clase);
   }
   
   async findAll() {
