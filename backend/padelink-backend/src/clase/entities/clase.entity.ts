@@ -24,18 +24,14 @@ export class Clase {
     @JoinColumn({ name: 'profesorId'})
     profesor: Profesor;
 
-    @ManyToOne(() => Club)
-    @JoinColumn({ name: 'clubId'})
-    club: Club;
-
     @Column({ nullable: false })
     fecha_hora: Date;
 
     @Column({ nullable: false })
     duracion_minutos: number;       
 
-    @Column()
-    nivel: number;
+    @Column({ type: 'varchar' })
+    nivel: string;
 
     @Column()
     capacidad_maxima: number;
@@ -47,10 +43,10 @@ export class Clase {
     @JoinTable()
     alumnos_inscritos: Alumno[];
 
-    @Column()
+    @Column({ type: 'enum', enum: TipoEnum, default: TipoEnum.GRUPAL })
     tipo_clase: TipoEnum;
 
-    @Column()
+    @Column({ type: 'enum', enum: EstadoEnum, default: EstadoEnum.DISPONIBLE })
     estado: EstadoEnum;
 
     @Column({ default: () => 'CURRENT_TIMESTAMP' })

@@ -5,14 +5,12 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Clase } from './entities/clase.entity';
 import { Alumno } from '../alumno/entities/alumno.entity';
 import { ProfesorModule } from '../profesor/profesor.module';
-import { ClubModule } from '../club/club.module';
 import { AlumnoModule } from '../alumno/alumno.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Clase, Alumno]),
     ProfesorModule,
-    ClubModule,
     AlumnoModule,
   ],
   controllers: [ClaseController],

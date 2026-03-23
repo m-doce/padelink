@@ -8,10 +8,6 @@ export class CreateClaseDto {
   @IsNotEmpty()
   profesorId: number;
 
-  @IsInt()
-  @IsNotEmpty()
-  clubId: number;
-
   @IsDateString()
   @IsNotEmpty()
   fecha_hora: string;
@@ -20,9 +16,9 @@ export class CreateClaseDto {
   @Min(1)
   duracion_minutos: number;
 
-  @IsInt()
-  @Min(1)
-  nivel: number;
+  @IsString()
+  @IsNotEmpty()
+  nivel: string;
 
   @IsInt()
   @Min(1)
@@ -33,8 +29,8 @@ export class CreateClaseDto {
   descripcion?: string;
 
   @IsEnum(TipoEnum)
-  @IsNotEmpty()
-  tipo_clase: TipoEnum;
+  @IsOptional()
+  tipo_clase?: TipoEnum;
 
   @IsEnum(EstadoEnum)
   @IsOptional()

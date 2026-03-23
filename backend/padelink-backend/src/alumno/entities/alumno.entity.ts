@@ -25,11 +25,14 @@ export class Alumno {
     @ManyToMany(() => Clase, (clase) => clase.alumnos_inscritos)
     clases: Clase[];
 
+    @Column({ type: 'date', nullable: true })
+    fecha_nacimiento: string;
+
     @Column({ nullable: true })
     edad: number;
 
-    @Column({ nullable: true })
-    nivel: number;
+    @Column({ type: 'varchar', nullable: true })
+    nivel: string;
 
     @Column({ type: 'enum', enum: ManoDominante, nullable: true })
     mano_dominante: ManoDominante;
