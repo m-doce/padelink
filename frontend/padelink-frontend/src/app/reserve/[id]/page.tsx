@@ -1,46 +1,94 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
+import { api } from "@/lib/api";
 
-// --- MOCK DATA ---
-const MOCK_CLASE = {
-  id: 101,
+// --- TYPES ---
+type Clase = {
+  id: number;
   profesor: {
-    nombre: "Juan",
-    apellido: "Martínez",
-    precioPorClase: 3500,
-  },
-  club: {
-    nombre: "Padel Club Central",
-    direccion: "Av. Siempre Viva 123",
-  },
-  fecha_hora: new Date(new Date().setDate(new Date().getDate() + 1)),
-  duracion_minutos: 60,
-  nivel: 3,
-  capacidad_maxima: 4,
-  alumnos_inscritos: [{ id: 1, nombre: "Pedro" }, { id: 2, nombre: "Ana" }],
-  descripcion: "Clase de nivel intermedio enfocada en volea y bandeja.",
+    usuario: { nombre: string; apellido: string };
+    precioPorClase: number;
+  };
+  fecha_hora: string;
+  duracion_minutos: number;
+  nivel: string;
+  capacidad_maxima: number;
+  alumnos_inscritos: any[];
+  descripcion: string;
 };
 
 export default function ReservePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
+  const [clase, setClase] = useState<Clase | null>(null);
+  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState("");
 
-  // In a real app, fetch class details based on `id`
-  const clase = MOCK_CLASE;
+  useEffect(() => {
+    const fetchClase = async () => {
+      try {
+        const data = await api.get<Clase>(`/clase/${id}`);
+        setClase(data);
+      } catch (err: any) {
+        setError(err.message || "Error al cargar los detalles de la clase");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchClase();
+  }, [id]);
 
   const handleConfirmReservation = async () => {
+    if (!clase) return;
+    
+    const userStr = localStorage.getItem('user');
+    if (!userStr) {
+      router.push("/login");
+      return;
+    }
+    
+    const user = JSON.parse(userStr);
     setSubmitting(true);
-    // Simulating API call to POST /clase/:id/reserve
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setSubmitting(false);
-    setSuccess(true);
+    setError("");
+
+    try {
+      await api.post(`/clase/${id}/reserve`, { alumnoId: user.usuario_id });
+      setSuccess(true);
+    } catch (err: any) {
+      setError(err.message || "No se pudo confirmar la reserva");
+    } finally {
+      setSubmitting(false);
+    }
   };
+
+  if (loading) return (
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
+      <Navbar />
+      <div className="flex items-center justify-center py-20">
+        <p className="text-lg text-zinc-500 animate-pulse">Cargando detalles de la reserva...</p>
+      </div>
+    </div>
+  );
+
+  if (error && !success) return (
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
+      <Navbar />
+      <div className="flex flex-col items-center justify-center py-20 text-red-500">
+        <p className="mb-4">{error}</p>
+        <Link href="/professors" className="text-zinc-900 dark:text-white underline">Volver a profesores</Link>
+      </div>
+    </div>
+  );
+
+  if (!clase) return null;
+
+  const fecha = new Date(clase.fecha_hora);
 
   if (success) {
     return (
@@ -55,7 +103,7 @@ export default function ReservePage({ params }: { params: Promise<{ id: string }
             </div>
             <h1 className="text-2xl font-bold mb-2">¡Reserva Confirmada!</h1>
             <p className="text-zinc-600 dark:text-zinc-400 mb-8 text-sm">
-              Tu lugar en la clase de <b>{clase.profesor.nombre}</b> ha sido reservado con éxito. Te esperamos en <b>{clase.club.nombre}</b>.
+              Tu lugar en la clase de <b>{clase.profesor?.usuario?.nombre}</b> ha sido reservado con éxito.
             </p>
             <div className="flex flex-col gap-3">
               <Link
@@ -88,11 +136,11 @@ export default function ReservePage({ params }: { params: Promise<{ id: string }
             
             <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 border border-zinc-200 dark:border-zinc-800 shadow-sm">
               <div className="flex items-center gap-4 mb-6 pb-6 border-b border-zinc-100 dark:border-zinc-800">
-                <div className="w-16 h-16 bg-lime-100 dark:bg-lime-900/50 rounded-full flex items-center justify-center text-2xl font-bold text-lime-700 dark:text-lime-400">
-                  {clase.profesor.nombre[0]}{clase.profesor.apellido[0]}
+                <div className="w-16 h-16 bg-lime-100 dark:bg-lime-900/50 rounded-full flex items-center justify-center text-2xl font-bold text-lime-700 dark:dark:text-lime-400">
+                  {clase.profesor?.usuario?.nombre?.[0]}{clase.profesor?.usuario?.apellido?.[0]}
                 </div>
                 <div>
-                  <h3 className="font-bold text-lg">{clase.profesor.nombre} {clase.profesor.apellido}</h3>
+                  <h3 className="font-bold text-lg">{clase.profesor?.usuario?.nombre} {clase.profesor?.usuario?.apellido}</h3>
                   <p className="text-sm text-zinc-500 dark:text-zinc-400">Profesor de Padel</p>
                 </div>
               </div>
@@ -103,20 +151,12 @@ export default function ReservePage({ params }: { params: Promise<{ id: string }
                     <span className="text-xl">📅</span>
                     <div>
                       <p className="font-semibold text-zinc-900 dark:text-zinc-100">
-                        {clase.fecha_hora.toLocaleDateString("es-ES", { weekday: 'long', day: 'numeric', month: 'long' })}
+                        {fecha.toLocaleDateString("es-ES", { weekday: 'long', day: 'numeric', month: 'long' })}
                       </p>
                       <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                        {clase.fecha_hora.toLocaleTimeString("es-ES", { hour: '2-digit', minute: '2-digit' })} ({clase.duracion_minutos} min)
+                        {fecha.toLocaleTimeString("es-ES", { hour: '2-digit', minute: '2-digit' })} ({clase.duracion_minutos} min)
                       </p>
                     </div>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <span className="text-xl">📍</span>
-                  <div>
-                    <p className="font-semibold text-zinc-900 dark:text-zinc-100">{clase.club.nombre}</p>
-                    <p className="text-sm text-zinc-500 dark:text-zinc-400">{clase.club.direccion}</p>
                   </div>
                 </div>
 
@@ -138,7 +178,7 @@ export default function ReservePage({ params }: { params: Promise<{ id: string }
               <div className="space-y-3 mb-6">
                 <div className="flex justify-between text-sm">
                   <span className="text-zinc-500 dark:text-zinc-400">Precio de la clase</span>
-                  <span>${clase.profesor.precioPorClase}</span>
+                  <span>${clase.profesor?.precioPorClase}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-zinc-500 dark:text-zinc-400">Cargos de servicio</span>
@@ -146,7 +186,7 @@ export default function ReservePage({ params }: { params: Promise<{ id: string }
                 </div>
                 <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800 flex justify-between font-bold text-lg">
                   <span>Total</span>
-                  <span className="text-lime-600 dark:text-lime-400">${clase.profesor.precioPorClase}</span>
+                  <span className="text-lime-600 dark:text-lime-400">${clase.profesor?.precioPorClase}</span>
                 </div>
               </div>
 
@@ -157,6 +197,8 @@ export default function ReservePage({ params }: { params: Promise<{ id: string }
               >
                 {submitting ? "Confirmando..." : "Confirmar Reserva"}
               </button>
+              
+              {error && <p className="text-xs text-red-500 text-center mt-2">{error}</p>}
               
               <p className="text-[10px] text-zinc-500 text-center mt-4">
                 Al confirmar, aceptas nuestras políticas de cancelación y términos de servicio.
