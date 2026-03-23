@@ -1,12 +1,40 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function Navbar() {
-  // Mocked user status
+  const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userRole, setUserRole] = useState<"student" | "professor" | null>(null);
+  const [userRole, setUserRole] = useState<"ALUMNO" | "PROFESOR" | null>(null);
+
+  const checkAuth = () => {
+    const token = localStorage.getItem('token');
+    const userStr = localStorage.getItem('user');
+    if (token && userStr) {
+      const user = JSON.parse(userStr);
+      setIsLoggedIn(true);
+      setUserRole(user.tipoUsuario);
+    } else {
+      setIsLoggedIn(false);
+      setUserRole(null);
+    }
+  };
+
+  useEffect(() => {
+    checkAuth();
+    window.addEventListener('auth-change', checkAuth);
+    return () => window.removeEventListener('auth-change', checkAuth);
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setIsLoggedIn(false);
+    setUserRole(null);
+    router.push("/");
+  };
 
   return (
     <header className="flex h-16 items-center justify-between border-b border-zinc-200 dark:border-zinc-800 px-6 lg:px-12 sticky top-0 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md z-10">
@@ -24,13 +52,13 @@ export default function Navbar() {
         {isLoggedIn ? (
           <>
             <Link 
-              href={userRole === "professor" ? "/dashboard/professor" : "/dashboard/student"} 
+              href={userRole === "PROFESOR" ? "/dashboard/professor" : "/dashboard/student"} 
               className="hover:text-lime-600 dark:hover:text-lime-400 transition-colors"
             >
               Mi Panel
             </Link>
             <button 
-              onClick={() => setIsLoggedIn(false)}
+              onClick={handleLogout}
               className="text-red-600 hover:text-red-700 font-medium"
             >
               Cerrar Sesión

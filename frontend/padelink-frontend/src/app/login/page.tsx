@@ -4,6 +4,8 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
+import { api } from "@/lib/api";
+
 export default function LoginPage() {
   const router = useRouter();
   const [form, setForm] = useState({
@@ -19,27 +21,19 @@ export default function LoginPage() {
     setSubmitting(true);
 
     try {
-      const backendUrl =
-        process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:3000";
+      const data: any = await api.post("/auth/login", form);
 
-      // Assuming standard NestJS AuthController path
-      const response = await fetch(`${backendUrl}/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-
-      if (!response.ok) {
-        throw new Error("Credenciales inválidas");
+      if (data.access_token) {
+        localStorage.setItem('token', data.access_token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        
+        // Dispatch custom event for navbar to update
+        window.dispatchEvent(new Event('auth-change'));
+        
+        router.push("/");
       }
-
-      // Here you would typically save the token
-      // const data = await response.json();
-      // localStorage.setItem('token', data.access_token);
-
-      router.push("/");
-    } catch (err) {
-      setError("Email o contraseña incorrectos");
+    } catch (err: any) {
+      setError(err.message || "Email o contraseña incorrectos");
     } finally {
       setSubmitting(false);
     }

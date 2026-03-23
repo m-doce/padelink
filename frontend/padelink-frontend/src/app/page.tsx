@@ -1,7 +1,16 @@
+"use client";
+
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
+import { useEffect, useState } from "react";
 
 export default function Home() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    setIsLoggedIn(!!localStorage.getItem('token'));
+  }, []);
+
   return (
     <div className="flex min-h-screen flex-col bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-50 font-sans">
       <Navbar />
@@ -19,11 +28,11 @@ export default function Home() {
             </p>
             <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Link
-                href="/register"
+                href={isLoggedIn ? "/professors" : "/register"}
                 className="h-12 rounded-full bg-lime-500 px-8 text-base font-semibold text-white transition-all hover:bg-lime-600 hover:shadow-lg dark:bg-lime-400 dark:text-zinc-900 dark:hover:bg-lime-500"
                 style={{ display: 'flex', alignItems: 'center' }}
               >
-                Empezar ahora
+                {isLoggedIn ? "Buscar clases" : "Empezar ahora"}
               </Link>
               <Link
                 href="/professors"

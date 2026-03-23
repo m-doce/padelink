@@ -1,117 +1,196 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
+import { useState, useEffect } from "react";
+import { api } from "@/lib/api";
+import { useRouter } from "next/navigation";
+import Navbar from "@/components/Navbar";
 
-// --- MOCK DATA ---
-// Ideally fetched from an API endpoint like GET /profesor/me
-const INITIAL_PROFILE = {
-  bio: "Entrenador certificado con más de 10 años de experiencia. Especialista en táctica.",
-  precioPorClase: 3500,
-  manoDominante: "diestro",
-  linkAjpp: "https://ajpp.com.ar/jugador/juan-martinez",
+// --- TYPES ---
+type Usuario = {
+  id: number;
+  nombre: string;
+  apellido: string;
+  email: string;
+  telefono: string;
 };
 
-const INITIAL_CLASSES = [
-  {
-    id: 101,
-    fecha: "2026-03-01",
-    hora: "10:00",
-    duracion: 60,
-    nivel: 3,
-    capacidad: 4,
-    inscritos: 2,
-    club: "Padel Club Central",
-    descripcion: "Clase de nivel intermedio.",
-    estado: "DISPONIBLE",
-  },
-  {
-    id: 102,
-    fecha: "2026-03-02",
-    hora: "18:30",
-    duracion: 90,
-    nivel: 5,
-    capacidad: 4,
-    inscritos: 4,
-    club: "Padel Club Central",
-    descripcion: "Partido táctico.",
-    estado: "COMPLETA",
-  },
-];
+type ProfesorProfile = {
+  bio: string;
+  precioPorClase: number;
+  manoDominante: string;
+  linkAjpp: string;
+  usuario: Usuario;
+};
+
+type Clase = {
+  id: number;
+  fecha_hora: string;
+  duracion_minutos: number;
+  nivel: string;
+  capacidad_maxima: number;
+  alumnos_inscritos: any[];
+  estado: string;
+};
 
 export default function ProfessorDashboard() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<"profile" | "classes">("classes");
   
   // Profile State
-  const [profile, setProfile] = useState(INITIAL_PROFILE);
-  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [profile, setProfile] = useState<ProfesorProfile | null>(null);
+  const [classes, setClasses] = useState<Clase[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   // Classes State
-  const [classes, setClasses] = useState(INITIAL_CLASSES);
   const [showAddClassModal, setShowAddClassModal] = useState(false);
   
   // New Class Form State
   const [newClass, setNewClass] = useState({
     fecha: "",
     hora: "",
-    duracion: 60,
-    nivel: 1,
-    capacidad: 4,
-    club: "",
+    duracion_minutos: 60,
+    nivel: "basico",
+    capacidad_maxima: 4,
     descripcion: "",
   });
 
+  useEffect(() => {
+    const fetchData = async () => {
+      const userStr = localStorage.getItem('user');
+      if (!userStr) {
+        router.push("/login");
+        return;
+      }
+      const user = JSON.parse(userStr);
+
+      try {
+        const [profData, classesData] = await Promise.all([
+          api.get<ProfesorProfile>(`/profesor/${user.usuario_id}`),
+          api.get<Clase[]>(`/clase/profesor/${user.usuario_id}`)
+        ]);
+        setProfile(profData);
+        setClasses(classesData);
+      } catch (err: any) {
+        console.error("Error loading dashboard", err);
+        setError(err.message || "Error al cargar datos");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [router]);
+
   // --- HANDLERS ---
 
-  const handleProfileUpdate = (e: React.FormEvent) => {
+  const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    // API Call to PUT /profesor
-    setIsEditingProfile(false);
-    alert("Perfil actualizado correctamente");
-  };
+    if (!profile) return;
+    const userStr = localStorage.getItem('user');
+    const user = JSON.parse(userStr!);
 
-  const handleDeleteClass = (id: number) => {
-    if (confirm("¿Estás seguro de que deseas cancelar esta clase?")) {
-      // API Call to DELETE /clase/:id or PATCH status
-      setClasses(classes.filter((c) => c.id !== id));
+    try {
+      // Preparamos el payload con los datos de usuario a primer nivel para que el backend los procese
+      const payload = {
+        ...profile,
+        nombre: profile.usuario.nombre,
+        apellido: profile.usuario.apellido,
+        email: profile.usuario.email,
+        telefono: profile.usuario.telefono
+      };
+      
+      const updatedProfile = await api.patch<ProfesorProfile>(`/profesor/${user.usuario_id}`, payload);
+      setProfile(updatedProfile);
+      
+      // Actualizar localStorage con los datos nuevos
+      const newUser = { ...user, ...updatedProfile.usuario };
+      localStorage.setItem('user', JSON.stringify(newUser));
+      window.dispatchEvent(new Event('auth-change'));
+      
+      alert("Perfil actualizado correctamente");
+    } catch (err: any) {
+      alert(err.message || "Error al actualizar perfil");
     }
   };
 
-  const handleAddClass = (e: React.FormEvent) => {
+  const handleDeleteClass = async (id: number) => {
+    if (confirm("¿Estás seguro de que deseas eliminar esta clase?")) {
+      try {
+        await api.delete(`/clase/${id}`);
+        setClasses(classes.filter((c) => c.id !== id));
+      } catch (err) {
+        alert("No se pudo eliminar la clase");
+      }
+    }
+  };
+
+  const handleAddClass = async (e: React.FormEvent) => {
     e.preventDefault();
-    // API Call to POST /clase
-    const createdClass = {
-      id: Date.now(),
-      ...newClass,
-      inscritos: 0,
-      estado: "DISPONIBLE",
-    };
-    // @ts-ignore - simple mock update
-    setClasses([...classes, createdClass]);
-    setShowAddClassModal(false);
-    setNewClass({
+    const userStr = localStorage.getItem('user');
+    const user = JSON.parse(userStr!);
+
+    try {
+      const fecha_hora = new Date(`${newClass.fecha}T${newClass.hora}`).toISOString();
+      const payload = {
+        ...newClass,
+        fecha_hora,
+        profesorId: user.usuario_id,
+        nivel: String(newClass.nivel),
+        tipo_clase: "GRUPAL",
+        estado: "DISPONIBLE"
+      };
+
+      const createdClass = await api.post<Clase>("/clase", payload);
+      setClasses([...classes, createdClass]);
+      setShowAddClassModal(false);
+      setNewClass({
         fecha: "",
         hora: "",
-        duracion: 60,
-        nivel: 1,
-        capacidad: 4,
-        club: "",
+        duracion_minutos: 60,
+        nivel: "basico",
+        capacidad_maxima: 4,
         descripcion: "",
-    });
+      });
+    } catch (err: any) {
+      alert(err.message || "Error al crear clase");
+    }
   };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    router.push("/");
+  };
+
+  if (loading) return (
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col">
+      <Navbar />
+      <div className="flex-1 flex items-center justify-center">
+        <p className="animate-pulse text-zinc-500">Cargando dashboard...</p>
+      </div>
+    </div>
+  );
+
+  if (error) return (
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col">
+      <Navbar />
+      <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+        <div className="bg-red-50 text-red-600 p-4 rounded-lg border border-red-200 mb-4">
+          <p className="font-bold">Error</p>
+          <p>{error}</p>
+        </div>
+        <button onClick={() => window.location.reload()} className="bg-zinc-900 text-white px-4 py-2 rounded-md text-sm">
+          Reintentar
+        </button>
+      </div>
+    </div>
+  );
+
+  if (!profile) return null;
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 font-sans text-zinc-900 dark:text-zinc-50 flex flex-col">
-       {/* Dashboard Navbar */}
-       <header className="flex h-16 items-center justify-between border-b border-zinc-200 dark:border-zinc-800 px-6 bg-white dark:bg-zinc-950">
-        <div className="flex items-center gap-2">
-           <span className="font-bold text-lg">PadeLink <span className="text-lime-600 font-normal text-sm ml-1">Dashboard Profesor</span></span>
-        </div>
-        <div className="flex gap-4 text-sm">
-           <Link href="/" className="text-zinc-500 hover:text-zinc-900 dark:hover:text-white">Volver al sitio</Link>
-           <button className="text-red-600 hover:text-red-700 font-medium">Cerrar Sesión</button>
-        </div>
-      </header>
+      <Navbar />
 
       <div className="flex flex-1 flex-col md:flex-row">
         {/* Sidebar */}
@@ -149,33 +228,36 @@ export default function ProfessorDashboard() {
               </div>
 
               <div className="space-y-4">
-                 {classes.map((cls) => (
-                   <div key={cls.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-5 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
-                      <div className="mb-4 sm:mb-0">
-                         <div className="flex items-center gap-3 mb-1">
-                            <span className={`px-2 py-0.5 text-xs font-bold rounded uppercase ${cls.estado === 'DISPONIBLE' ? 'bg-green-100 text-green-700' : 'bg-zinc-100 text-zinc-600'}`}>
-                              {cls.estado}
-                            </span>
-                            <span className="text-lg font-bold">
-                              {cls.fecha.split("-").reverse().join("/")} - {cls.hora}
-                            </span>
-                         </div>
-                         <p className="text-sm text-zinc-500 dark:text-zinc-400">{cls.club} • Nivel {cls.nivel} • {cls.duracion} min</p>
-                         <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">Inscritos: <b>{cls.inscritos}</b> / {cls.capacidad}</p>
-                      </div>
-                      <div className="flex gap-2 w-full sm:w-auto">
-                        <button className="flex-1 sm:flex-none px-3 py-1.5 border border-zinc-300 rounded text-sm hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-800 transition">
-                          Editar
-                        </button>
-                        <button 
-                          onClick={() => handleDeleteClass(cls.id)}
-                          className="flex-1 sm:flex-none px-3 py-1.5 border border-red-200 text-red-600 rounded text-sm hover:bg-red-50 dark:border-red-900/50 dark:hover:bg-red-900/20 transition"
-                        >
-                          Eliminar
-                        </button>
-                      </div>
-                   </div>
-                 ))}
+                 {classes.map((cls) => {
+                   const fecha = new Date(cls.fecha_hora);
+                   return (
+                     <div key={cls.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-5 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
+                        <div className="mb-4 sm:mb-0">
+                           <div className="flex items-center gap-3 mb-1">
+                              <span className={`px-2 py-0.5 text-xs font-bold rounded uppercase ${cls.estado === 'DISPONIBLE' ? 'bg-green-100 text-green-700' : 'bg-zinc-100 text-zinc-600'}`}>
+                                {cls.estado}
+                              </span>
+                              <span className="text-lg font-bold">
+                                {fecha.toLocaleDateString("es-ES")} - {fecha.toLocaleTimeString("es-ES", { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                           </div>
+                           <p className="text-sm text-zinc-500 dark:text-zinc-400">Nivel {cls.nivel} • {cls.duracion_minutos} min</p>
+                           <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">Inscritos: <b>{cls.alumnos_inscritos?.length || 0}</b> / {cls.capacidad_maxima}</p>
+                        </div>
+                        <div className="flex gap-2 w-full sm:w-auto">
+                          <button className="flex-1 sm:flex-none px-3 py-1.5 border border-zinc-300 rounded text-sm hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-800 transition">
+                            Editar
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteClass(cls.id)}
+                            className="flex-1 sm:flex-none px-3 py-1.5 border border-red-200 text-red-600 rounded text-sm hover:bg-red-50 dark:border-red-900/50 dark:hover:bg-red-900/20 transition"
+                          >
+                            Eliminar
+                          </button>
+                        </div>
+                     </div>
+                   );
+                 })}
                  
                  {classes.length === 0 && (
                    <div className="text-center py-12 text-zinc-500 border-2 border-dashed border-zinc-200 rounded-xl">
@@ -192,6 +274,33 @@ export default function ProfessorDashboard() {
               <h1 className="text-2xl font-bold mb-8">Editar Perfil</h1>
               <form onSubmit={handleProfileUpdate} className="space-y-6 bg-white dark:bg-zinc-900 p-8 rounded-xl border border-zinc-200 dark:border-zinc-800">
                 
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Nombre</label>
+                    <input 
+                      type="text" 
+                      value={profile.usuario?.nombre || ""}
+                      onChange={(e) => setProfile({
+                        ...profile, 
+                        usuario: { ...profile.usuario, nombre: e.target.value }
+                      })}
+                      className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:ring-1 focus:ring-lime-500 outline-none dark:bg-zinc-950 dark:border-zinc-700"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Apellido</label>
+                    <input 
+                      type="text" 
+                      value={profile.usuario?.apellido || ""}
+                      onChange={(e) => setProfile({
+                        ...profile, 
+                        usuario: { ...profile.usuario, apellido: e.target.value }
+                      })}
+                      className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:ring-1 focus:ring-lime-500 outline-none dark:bg-zinc-950 dark:border-zinc-700"
+                    />
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium mb-1">Biografía</label>
                   <textarea 
@@ -274,28 +383,27 @@ export default function ProfessorDashboard() {
                     <div>
                       <label className="block text-xs font-medium mb-1">Duración (min)</label>
                       <input type="number" className="w-full rounded border p-2 text-sm dark:bg-zinc-950 dark:border-zinc-700" 
-                        value={newClass.duracion} onChange={e => setNewClass({...newClass, duracion: Number(e.target.value)})}
+                        value={newClass.duracion_minutos} onChange={e => setNewClass({...newClass, duracion_minutos: Number(e.target.value)})}
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium mb-1">Nivel (1-7)</label>
-                      <input type="number" min="1" max="7" className="w-full rounded border p-2 text-sm dark:bg-zinc-950 dark:border-zinc-700" 
-                        value={newClass.nivel} onChange={e => setNewClass({...newClass, nivel: Number(e.target.value)})}
-                      />
+                      <label className="block text-xs font-medium mb-1">Nivel</label>
+                      <select 
+                        className="w-full rounded border p-2 text-sm dark:bg-zinc-950 dark:border-zinc-700"
+                        value={newClass.nivel} 
+                        onChange={e => setNewClass({...newClass, nivel: e.target.value})}
+                      >
+                        <option value="basico">Básico</option>
+                        <option value="intermedio">Intermedio</option>
+                        <option value="avanzado">Avanzado</option>
+                      </select>
                     </div>
                     <div>
                       <label className="block text-xs font-medium mb-1">Capacidad</label>
                       <input type="number" className="w-full rounded border p-2 text-sm dark:bg-zinc-950 dark:border-zinc-700" 
-                        value={newClass.capacidad} onChange={e => setNewClass({...newClass, capacidad: Number(e.target.value)})}
+                        value={newClass.capacidad_maxima} onChange={e => setNewClass({...newClass, capacidad_maxima: Number(e.target.value)})}
                       />
                     </div>
-                 </div>
-
-                 <div>
-                    <label className="block text-xs font-medium mb-1">Club / Ubicación</label>
-                    <input required type="text" placeholder="Ej: Club Central" className="w-full rounded border p-2 text-sm dark:bg-zinc-950 dark:border-zinc-700" 
-                      value={newClass.club} onChange={e => setNewClass({...newClass, club: e.target.value})}
-                    />
                  </div>
 
                  <div>

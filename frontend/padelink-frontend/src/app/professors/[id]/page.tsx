@@ -1,10 +1,11 @@
 "use client";
 
+import { useState, use, useEffect } from "react";
 import Link from "next/link";
-import { useState, use } from "react";
 import Navbar from "@/components/Navbar";
+import { api } from "@/lib/api";
 
-// --- MOCK DATA FOR DEMO ---
+// --- TYPES ---
 type Usuario = {
   nombre: string;
   apellido: string;
@@ -12,13 +13,13 @@ type Usuario = {
 };
 
 type Profesor = {
-  id: number;
+  usuario_id: number;
   usuario: Usuario;
   bio: string;
-  precioPorClase: number;
+  precioPorClase: string;
   manoDominante: "diestro" | "zurdo";
   linkAjpp?: string;
-  promedioCalificacion: number;
+  promedioCalificacion: string;
   imageUrl?: string;
 };
 
@@ -29,86 +30,64 @@ type Club = {
 };
 
 type Alumno = {
-  id: number;
+  usuario_id: number;
   nombre: string;
 };
 
 type Clase = {
   id: number;
-  profesorId: number;
   club: Club;
-  fecha_hora: Date;
+  fecha_hora: string;
   duracion_minutos: number;
-  nivel: number;
+  nivel: string;
   capacidad_maxima: number;
   descripcion: string;
   alumnos_inscritos: Alumno[];
   estado: "DISPONIBLE" | "CANCELADA" | "COMPLETA";
 };
 
-// Mock Professor (ID: 1)
-const MOCK_PROFESSOR: Profesor = {
-  id: 1,
-  usuario: {
-    nombre: "Juan",
-    apellido: "Martínez",
-    email: "juan.padel@example.com",
-  },
-  bio: "Entrenador certificado con más de 10 años de experiencia. Especialista en táctica y posicionamiento en pista. He entrenado a jugadores de primera categoría.",
-  precioPorClase: 3500,
-  manoDominante: "diestro",
-  promedioCalificacion: 4.8,
-  linkAjpp: "https://ajpp.com.ar/jugador/juan-martinez",
-};
-
-// Mock Classes
-const MOCK_CLASSES: Clase[] = [
-  {
-    id: 101,
-    profesorId: 1,
-    club: { id: 1, nombre: "Padel Club Central", direccion: "Av. Siempre Viva 123" },
-    fecha_hora: new Date(new Date().setDate(new Date().getDate() + 1)), // Tomorrow
-    duracion_minutos: 60,
-    nivel: 3,
-    capacidad_maxima: 4,
-    descripcion: "Clase de nivel intermedio enfocada en volea y bandeja.",
-    alumnos_inscritos: [{ id: 1, nombre: "Pedro" }, { id: 2, nombre: "Ana" }],
-    estado: "DISPONIBLE",
-  },
-  {
-    id: 102,
-    profesorId: 1,
-    club: { id: 1, nombre: "Padel Club Central", direccion: "Av. Siempre Viva 123" },
-    fecha_hora: new Date(new Date().setDate(new Date().getDate() + 2)), // Day after tomorrow
-    duracion_minutos: 90,
-    nivel: 5,
-    capacidad_maxima: 4,
-    descripcion: "Partido táctico con correcciones en tiempo real.",
-    alumnos_inscritos: [{ id: 3, nombre: "Luis" }, { id: 4, nombre: "Marta" }, { id: 5, nombre: "Jorge" }, { id: 6, nombre: "Sofia" }],
-    estado: "COMPLETA",
-  },
-  {
-    id: 103,
-    profesorId: 1,
-    club: { id: 2, nombre: "Zona Norte Padel", direccion: "Calle Falsa 123" },
-    fecha_hora: new Date(new Date().setDate(new Date().getDate() + 3)),
-    duracion_minutos: 60,
-    nivel: 2,
-    capacidad_maxima: 3,
-    descripcion: "Iniciación: golpes básicos y reglas.",
-    alumnos_inscritos: [],
-    estado: "DISPONIBLE",
-  },
-];
-
 export default function ProfessorProfilePage({ params }: { params: Promise<{ id: string }> }) {
-  // Unwrap params using React.use() for Next.js 15+ compatibility or direct await if in async component
-  // Since this is a client component, we use `use` hook.
-  const { id } = use(params); 
-  
-  // In a real app, fetch data based on `id`
-  const professor = MOCK_PROFESSOR; // Simulating fetch
-  const classes = MOCK_CLASSES; // Simulating fetch
+  const { id } = use(params);
+  const [professor, setProfessor] = useState<Profesor | null>(null);
+  const [classes, setClasses] = useState<Clase[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [profData, classesData] = await Promise.all([
+          api.get<Profesor>(`/profesor/${id}`),
+          api.get<Clase[]>(`/clase/profesor/${id}`)
+        ]);
+        setProfessor(profData);
+        setClasses(classesData);
+      } catch (err: any) {
+        setError(err.message || "Error al cargar datos del profesor");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [id]);
+
+  if (loading) return (
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
+      <Navbar />
+      <div className="flex items-center justify-center py-20">
+        <p className="text-lg text-zinc-500 animate-pulse">Cargando perfil...</p>
+      </div>
+    </div>
+  );
+
+  if (error || !professor) return (
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
+      <Navbar />
+      <div className="flex items-center justify-center py-20 text-red-500">
+        <p>{error || "Profesor no encontrado"}</p>
+      </div>
+    </div>
+  );
 
   return (
     <div className="flex min-h-screen flex-col bg-zinc-50 dark:bg-zinc-950 font-sans text-zinc-900 dark:text-zinc-50">
@@ -134,7 +113,7 @@ export default function ProfessorProfilePage({ params }: { params: Promise<{ id:
                   </h1>
                   <div className="mt-2 flex flex-wrap gap-2">
                     <span className="inline-flex items-center rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
-                      {professor.manoDominante === "diestro" ? "Diestro ✋" : "Zurdo 🤚"}
+                      {professor.manoDominante?.toLowerCase() === "diestro" ? "Diestro ✋" : "Zurdo 🤚"}
                     </span>
                     <span className="inline-flex items-center rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
                       ★ {professor.promedioCalificacion}
@@ -176,6 +155,7 @@ export default function ProfessorProfilePage({ params }: { params: Promise<{ id:
               const spotsLeft = spotsTotal - spotsTaken;
               const isFull = spotsLeft <= 0;
               const isCancelled = clase.estado === "CANCELADA";
+              const fecha = new Date(clase.fecha_hora);
 
               return (
                 <div 
@@ -205,10 +185,10 @@ export default function ProfessorProfilePage({ params }: { params: Promise<{ id:
                     {/* Date & Time */}
                     <div className="mb-4">
                       <p className="text-sm font-semibold text-lime-600 dark:text-lime-400 uppercase tracking-wide">
-                        {clase.fecha_hora.toLocaleDateString("es-ES", { weekday: 'long', day: 'numeric', month: 'long' })}
+                        {fecha.toLocaleDateString("es-ES")}
                       </p>
                       <p className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
-                        {clase.fecha_hora.toLocaleTimeString("es-ES", { hour: '2-digit', minute: '2-digit' })}
+                        {fecha.toLocaleTimeString("es-ES", { hour: '2-digit', minute: '2-digit' })}
                       </p>
                       <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1 flex items-center gap-1">
                         ⏱ {clase.duracion_minutos} min
@@ -217,13 +197,6 @@ export default function ProfessorProfilePage({ params }: { params: Promise<{ id:
 
                     {/* Details */}
                     <div className="space-y-3 mb-6">
-                      <div className="flex items-start gap-3">
-                         <div className="mt-0.5 h-5 w-5 text-zinc-400">📍</div>
-                         <div>
-                            <p className="text-sm font-medium text-zinc-900 dark:text-zinc-200">{clase.club.nombre}</p>
-                            <p className="text-xs text-zinc-500 dark:text-zinc-400">{clase.club.direccion}</p>
-                         </div>
-                      </div>
                       <div className="flex items-center gap-3">
                          <div className="h-5 w-5 text-zinc-400 text-center text-sm font-bold border border-zinc-300 rounded flex items-center justify-center">N</div>
                          <p className="text-sm text-zinc-700 dark:text-zinc-300">Nivel {clase.nivel}</p>

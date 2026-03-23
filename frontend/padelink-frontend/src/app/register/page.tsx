@@ -4,7 +4,7 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-type UserType = "alumno" | "profesor";
+type UserType = "ALUMNO" | "PROFESOR";
 
 type RegisterFormState = {
   nombre: string;
@@ -19,6 +19,8 @@ type FormErrors = Partial<Record<keyof RegisterFormState, string>> & {
   general?: string;
 };
 
+import { api } from "@/lib/api";
+
 export default function RegisterPage() {
   const router = useRouter();
   const [form, setForm] = useState<RegisterFormState>({
@@ -27,7 +29,7 @@ export default function RegisterPage() {
     email: "",
     telefono: "",
     password: "",
-    tipoUsuario: "alumno",
+    tipoUsuario: "ALUMNO",
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [submitting, setSubmitting] = useState(false);
@@ -78,31 +80,11 @@ export default function RegisterPage() {
     setSubmitting(true);
 
     try {
-      const backendUrl =
-        process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:3000";
-
-      const response = await fetch(`${backendUrl}/user`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(form),
-      });
-
-      if (!response.ok) {
-        const errorBody = await response.json().catch(() => undefined);
-        const message =
-          (errorBody && (errorBody.message as string)) ||
-          "No se pudo registrar el usuario";
-        setErrors({ general: message });
-        return;
-      }
-
+      await api.post("/auth/register", form);
       router.push("/login");
-    } catch {
+    } catch (err: any) {
       setErrors({
-        general:
-          "Ocurrió un error al comunicarse con el servidor. Intenta nuevamente.",
+        general: err.message || "No se pudo registrar el usuario",
       });
     } finally {
       setSubmitting(false);
@@ -193,24 +175,24 @@ export default function RegisterPage() {
               Soy...
             </span>
             <div className="flex gap-3">
-              <label className={`flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm transition ${form.tipoUsuario === 'alumno' ? 'border-lime-500 bg-lime-50 text-lime-700 dark:bg-lime-900/20 dark:text-lime-400' : 'border-zinc-300 hover:border-zinc-400 dark:border-zinc-700 dark:text-zinc-300'}`}>
+              <label className={`flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm transition ${form.tipoUsuario === 'ALUMNO' ? 'border-lime-500 bg-lime-50 text-lime-700 dark:bg-lime-900/20 dark:text-lime-400' : 'border-zinc-300 hover:border-zinc-400 dark:border-zinc-700 dark:text-zinc-300'}`}>
                 <input
                   type="radio"
                   name="tipoUsuario"
-                  value="alumno"
-                  checked={form.tipoUsuario === "alumno"}
-                  onChange={() => handleChange("tipoUsuario", "alumno")}
+                  value="ALUMNO"
+                  checked={form.tipoUsuario === "ALUMNO"}
+                  onChange={() => handleChange("tipoUsuario", "ALUMNO")}
                   className="hidden"
                 />
                 Alumno
               </label>
-              <label className={`flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm transition ${form.tipoUsuario === 'profesor' ? 'border-lime-500 bg-lime-50 text-lime-700 dark:bg-lime-900/20 dark:text-lime-400' : 'border-zinc-300 hover:border-zinc-400 dark:border-zinc-700 dark:text-zinc-300'}`}>
+              <label className={`flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm transition ${form.tipoUsuario === 'PROFESOR' ? 'border-lime-500 bg-lime-50 text-lime-700 dark:bg-lime-900/20 dark:text-lime-400' : 'border-zinc-300 hover:border-zinc-400 dark:border-zinc-700 dark:text-zinc-300'}`}>
                 <input
                   type="radio"
                   name="tipoUsuario"
-                  value="profesor"
-                  checked={form.tipoUsuario === "profesor"}
-                  onChange={() => handleChange("tipoUsuario", "profesor")}
+                  value="PROFESOR"
+                  checked={form.tipoUsuario === "PROFESOR"}
+                  onChange={() => handleChange("tipoUsuario", "PROFESOR")}
                   className="hidden"
                 />
                 Profesor

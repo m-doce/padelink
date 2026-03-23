@@ -6,8 +6,9 @@ import { Posicion } from '../entities/alumno.entity';
 
 export class UpdateAlumnoDto  {
     usuario_id: number;
+    fecha_nacimiento?: string;
     edad?: number;
-    nivel?: number;
+    nivel?: string;
     mano_dominante?: ManoDominante;
     genero?: Genero;
     posicion?: Posicion;
