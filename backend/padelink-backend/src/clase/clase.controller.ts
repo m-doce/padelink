@@ -33,6 +33,11 @@ export class ClaseController {
     return this.claseService.findOne(+id);
   }
 
+  @Get('profesor/:profesorId')
+  findByProfesor(@Param('profesorId') profesorId: string) {
+    return this.claseService.findByProfesor(+profesorId);
+  }
+
   @Get('alumno/:alumnoId')
   findByAlumno(@Param('alumnoId') alumnoId: string) {
     return this.claseService.findByAlumno(+alumnoId);
@@ -41,6 +46,16 @@ export class ClaseController {
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateClaseDto: UpdateClaseDto) {
     return this.claseService.update(+id, updateClaseDto);
+  }
+
+  @Post(':id/reserve')
+  reserve(@Param('id') id: string, @Body('alumnoId') alumnoId: number) {
+    return this.claseService.addAlumno(+id, alumnoId);
+  }
+
+  @Delete(':id/reserve/:alumnoId')
+  cancelReserve(@Param('id') id: string, @Param('alumnoId') alumnoId: string) {
+    return this.claseService.removeAlumno(+id, +alumnoId);
   }
 
   @Delete(':id')

@@ -5,7 +5,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Clase, EstadoEnum } from './entities/clase.entity';
 import { In, Repository } from 'typeorm';
 import { ProfesorService } from '../profesor/profesor.service';
-import { ClubService } from '../club/club.service';
 import { AlumnoService } from '../alumno/alumno.service';
 import { Alumno } from '../alumno/entities/alumno.entity';
 
@@ -18,11 +17,10 @@ export class ClaseService {
     @InjectRepository(Alumno)
     private readonly alumnoRepository: Repository<Alumno>,
     private readonly profesorService: ProfesorService,
-    private readonly clubService: ClubService,
   ) {}
 
   async create(createClaseDto: CreateClaseDto) {
-    const { profesorId, clubId, alumnosIds, ...datosClase } = createClaseDto;
+    const { profesorId, alumnosIds, ...datosClase } = createClaseDto;
 
     // 1. Verificar y obtener el Profesor
     const profesor = await this.profesorService.findOne(profesorId);
@@ -30,13 +28,7 @@ export class ClaseService {
       throw new NotFoundException(`Profesor con ID ${profesorId} no encontrado`);
     }
 
-    // 2. Verificar y obtener el Club
-    const club = await this.clubService.findOne(clubId);
-    if (!club) {
-      throw new NotFoundException(`Club con ID ${clubId} no encontrado`);
-    }
-
-    // 3. Obtener los Alumnos si se proporcionaron IDs
+    // 2. Obtener los Alumnos si se proporcionaron IDs
     let alumnos: Alumno[] = [];
     if (alumnosIds && alumnosIds.length > 0) {
       alumnos = await this.alumnoRepository.find({
@@ -44,11 +36,10 @@ export class ClaseService {
       });
     }
 
-    // 4. Crear la clase con las relaciones
+    // 3. Crear la clase con las relaciones
     const nuevaClase = this.claseRepository.create({
       ...datosClase,
       profesor: profesor,
-      club: club,
       alumnos_inscritos: alumnos
     });
 
@@ -99,7 +90,21 @@ export class ClaseService {
   }
 
   async findOne(id: number) {
-    return this.claseRepository.findOne({ where: { id } });
+    return this.claseRepository.findOne({ 
+      where: { id },
+      relations: ['profesor', 'profesor.usuario', 'alumnos_inscritos']
+    });
+  }
+
+  async findByProfesor(profesorId: number) {
+    return this.claseRepository.find({
+      where: {
+        profesor: {
+          usuario_id: profesorId
+        }
+      },
+      relations: ['alumnos_inscritos']
+    });
   }
 
   async findByAlumno(alumnoId: number) {
@@ -109,7 +114,7 @@ export class ClaseService {
           usuario_id: alumnoId
         }
       },
-      relations: ['profesor', 'club', 'profesor.usuario']
+      relations: ['profesor', 'profesor.usuario']
     });
   }
 
@@ -121,4 +126,30 @@ export class ClaseService {
     return this.claseRepository.update(id, updateClaseDto);
   }
 
+  async addAlumno(id: number, alumnoId: number) {
+    const clase = await this.claseRepository.findOne({ where: { id }, relations: ['alumnos_inscritos'] });
+    if (!clase) throw new NotFoundException('Clase no encontrada');
+    
+    const alumno = await this.alumnoRepository.findOne({ where: { usuario_id: alumnoId } });
+    if (!alumno) throw new NotFoundException('Alumno no encontrado');
+
+    if (clase.alumnos_inscritos.some(a => a.usuario_id === alumnoId)) {
+      throw new Error('El alumno ya está inscrito en esta clase');
+    }
+
+    if (clase.alumnos_inscritos.length >= clase.capacidad_maxima) {
+      throw new Error('La clase está llena');
+    }
+
+    clase.alumnos_inscritos.push(alumno);
+    return this.claseRepository.save(clase);
+  }
+
+  async removeAlumno(id: number, alumnoId: number) {
+    const clase = await this.claseRepository.findOne({ where: { id }, relations: ['alumnos_inscritos'] });
+    if (!clase) throw new NotFoundException('Clase no encontrada');
+
+    clase.alumnos_inscritos = clase.alumnos_inscritos.filter(a => a.usuario_id !== alumnoId);
+    return this.claseRepository.save(clase);
+  }
 }
