@@ -3,7 +3,9 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
+import Modal from "@/components/Modal";
 import { api } from "@/lib/api";
+import { toast } from "sonner";
 
 // --- TYPES ---
 type AlumnoProfile = {
@@ -47,6 +49,10 @@ export default function StudentDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // Modal de confirmación de cancelación
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [resToCancel, setResToCancel] = useState<number | null>(null);
+
   useEffect(() => {
     const fetchData = async () => {
       const userStr = localStorage.getItem('user');
@@ -69,17 +75,20 @@ export default function StudentDashboard() {
     fetchData();
   }, []);
 
-  const handleCancelReservation = async (id: number) => {
-    if (confirm("¿Estás seguro de que deseas cancelar esta reserva?")) {
-      const userStr = localStorage.getItem('user');
-      const user = JSON.parse(userStr!);
-      try {
-        await api.delete(`/clase/${id}/reserve/${user.usuario_id}`); 
-        setReservations(reservations.filter((r) => r.id !== id));
-        alert("Reserva cancelada correctamente");
-      } catch (err: any) {
-        alert(err.message || "No se pudo cancelar la reserva");
-      }
+  const handleCancelReservation = async () => {
+    if (!resToCancel) return;
+    
+    const userStr = localStorage.getItem('user');
+    const user = JSON.parse(userStr!);
+    try {
+      await api.delete(`/clase/${resToCancel}/reserve/${user.usuario_id}`); 
+      setReservations(reservations.filter((r) => r.id !== resToCancel));
+      setResToCancel(null);
+      toast.success("Reserva cancelada correctamente");
+    } catch (err: any) {
+      toast.error("Error al cancelar", {
+        description: err.message || "No se pudo cancelar la reserva.",
+      });
     }
   };
 
@@ -96,9 +105,13 @@ export default function StudentDashboard() {
         edad: calculateAge(profile.fecha_nacimiento)
       };
       await api.patch(`/alumno/${user.usuario_id}`, payload);
-      alert("Perfil de alumno actualizado correctamente");
+      toast.success("¡Perfil actualizado!", {
+        description: "Tus datos se guardaron correctamente.",
+      });
     } catch (err: any) {
-      alert(err.message || "Error al actualizar el perfil");
+      toast.error("Error al actualizar", {
+        description: err.message || "No se pudo guardar la información.",
+      });
     }
   };
 
@@ -190,7 +203,10 @@ export default function StudentDashboard() {
                       </div>
                       <div className="flex gap-2 w-full sm:w-auto">
                         <button
-                          onClick={() => handleCancelReservation(res.id)}
+                          onClick={() => {
+                            setResToCancel(res.id);
+                            setShowCancelModal(true);
+                          }}
                           className="flex-1 sm:flex-none px-4 py-2 border border-red-200 text-red-600 rounded-lg text-sm hover:bg-red-50 dark:border-red-900/50 dark:hover:bg-red-900/20 transition"
                         >
                           Cancelar Reserva
@@ -294,6 +310,18 @@ export default function StudentDashboard() {
           )}
         </main>
       </div>
+
+      <Modal
+        isOpen={showCancelModal}
+        onClose={() => setShowCancelModal(false)}
+        onConfirm={handleCancelReservation}
+        title="¿Cancelar reserva?"
+        description="Esta acción liberará tu cupo para otros alumnos. No podrás deshacerla."
+        confirmLabel="Confirmar Cancelación"
+        cancelLabel="Volver"
+        variant="danger"
+      />
+
     </div>
   );
 }

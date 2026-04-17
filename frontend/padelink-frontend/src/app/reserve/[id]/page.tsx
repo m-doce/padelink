@@ -4,7 +4,9 @@ import { use, useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
+import Modal from "@/components/Modal";
 import { api } from "@/lib/api";
+import { toast } from "sonner";
 
 // --- TYPES ---
 type Clase = {
@@ -30,6 +32,9 @@ export default function ReservePage({ params }: { params: Promise<{ id: string }
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
 
+  // Modal de confirmación
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+
   useEffect(() => {
     const fetchClase = async () => {
       try {
@@ -54,14 +59,19 @@ export default function ReservePage({ params }: { params: Promise<{ id: string }
     }
     
     const user = JSON.parse(userStr);
+
     setSubmitting(true);
     setError("");
 
     try {
       await api.post(`/clase/${id}/reserve`, { alumnoId: user.usuario_id });
       setSuccess(true);
+      toast.success("¡Reserva confirmada!");
     } catch (err: any) {
       setError(err.message || "No se pudo confirmar la reserva");
+      toast.error("Error al reservar", {
+        description: err.message || "No se pudo completar la reserva.",
+      });
     } finally {
       setSubmitting(false);
     }
@@ -191,7 +201,7 @@ export default function ReservePage({ params }: { params: Promise<{ id: string }
               </div>
 
               <button
-                onClick={handleConfirmReservation}
+                onClick={() => setShowConfirmModal(true)}
                 disabled={submitting}
                 className="w-full bg-zinc-900 dark:bg-lime-400 text-white dark:text-zinc-900 py-3 rounded-xl font-bold transition hover:opacity-90 disabled:opacity-50"
               >
@@ -207,6 +217,17 @@ export default function ReservePage({ params }: { params: Promise<{ id: string }
           </div>
         </div>
       </main>
+
+      <Modal
+        isOpen={showConfirmModal}
+        onClose={() => setShowConfirmModal(false)}
+        onConfirm={handleConfirmReservation}
+        title="¿Confirmar reserva?"
+        description={`Estás por reservar tu lugar en la clase de ${clase.profesor?.usuario?.nombre}. Se aplicarán los cargos correspondientes.`}
+        confirmLabel="Confirmar Reserva"
+        cancelLabel="Volver"
+        variant="success"
+      />
     </div>
   );
 }

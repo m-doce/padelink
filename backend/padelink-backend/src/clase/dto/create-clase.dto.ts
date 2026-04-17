@@ -8,6 +8,10 @@ export class CreateClaseDto {
   @IsNotEmpty()
   profesorId: number;
 
+  @IsInt()
+  @IsNotEmpty()
+  clubId: number;
+
   @IsDateString()
   @IsNotEmpty()
   fecha_hora: string;

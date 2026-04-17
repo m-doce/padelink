@@ -5,6 +5,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Clase, EstadoEnum } from './entities/clase.entity';
 import { In, Repository } from 'typeorm';
 import { ProfesorService } from '../profesor/profesor.service';
+import { ClubService } from '../club/club.service';
 import { AlumnoService } from '../alumno/alumno.service';
 import { Alumno } from '../alumno/entities/alumno.entity';
 
@@ -17,10 +18,11 @@ export class ClaseService {
     @InjectRepository(Alumno)
     private readonly alumnoRepository: Repository<Alumno>,
     private readonly profesorService: ProfesorService,
+    private readonly clubService: ClubService,
   ) {}
 
   async create(createClaseDto: CreateClaseDto) {
-    const { profesorId, alumnosIds, ...datosClase } = createClaseDto;
+    const { profesorId, clubId, alumnosIds } = createClaseDto;
 
     // 1. Verificar y obtener el Profesor
     const profesor = await this.profesorService.findOne(profesorId);
@@ -28,7 +30,13 @@ export class ClaseService {
       throw new NotFoundException(`Profesor con ID ${profesorId} no encontrado`);
     }
 
-    // 2. Obtener los Alumnos si se proporcionaron IDs
+    // 2. Verificar y obtener el Club
+    const club = await this.clubService.findOne(clubId);
+    if (!club) {
+      throw new NotFoundException(`Club con ID ${clubId} no encontrado`);
+    }
+
+    // 3. Obtener los Alumnos si se proporcionaron IDs
     let alumnos: Alumno[] = [];
     if (alumnosIds && alumnosIds.length > 0) {
       alumnos = await this.alumnoRepository.find({
@@ -36,10 +44,17 @@ export class ClaseService {
       });
     }
 
-    // 3. Crear la clase con las relaciones
+    // 4. Crear la clase con las relaciones
     const nuevaClase = this.claseRepository.create({
-      ...datosClase,
+      fecha_hora: new Date(createClaseDto.fecha_hora),
+      duracion_minutos: createClaseDto.duracion_minutos,
+      nivel: createClaseDto.nivel,
+      capacidad_maxima: createClaseDto.capacidad_maxima,
+      descripcion: createClaseDto.descripcion,
+      tipo_clase: createClaseDto.tipo_clase,
+      estado: createClaseDto.estado,
       profesor: profesor,
+      club: club,
       alumnos_inscritos: alumnos
     });
 
@@ -92,7 +107,7 @@ export class ClaseService {
   async findOne(id: number) {
     return this.claseRepository.findOne({ 
       where: { id },
-      relations: ['profesor', 'profesor.usuario', 'alumnos_inscritos']
+      relations: ['profesor', 'profesor.usuario', 'alumnos_inscritos', 'club']
     });
   }
 
@@ -103,7 +118,7 @@ export class ClaseService {
           usuario_id: profesorId
         }
       },
-      relations: ['alumnos_inscritos']
+      relations: ['alumnos_inscritos', 'club']
     });
   }
 
@@ -114,7 +129,7 @@ export class ClaseService {
           usuario_id: alumnoId
         }
       },
-      relations: ['profesor', 'profesor.usuario']
+      relations: ['profesor', 'profesor.usuario', 'club']
     });
   }
 

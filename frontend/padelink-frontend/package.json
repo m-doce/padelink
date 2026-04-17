@@ -9,9 +9,13 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@types/react-datepicker": "^7.0.0",
+    "date-fns": "^4.1.0",
     "next": "16.1.5",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-datepicker": "^9.1.0",
+    "react-dom": "19.2.3",
+    "sonner": "^1.7.4"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

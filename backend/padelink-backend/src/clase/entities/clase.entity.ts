@@ -24,20 +24,24 @@ export class Clase {
     @JoinColumn({ name: 'profesorId'})
     profesor: Profesor;
 
+    @ManyToOne(() => Club)
+    @JoinColumn({ name: 'clubId'})
+    club: Club;
+
     @Column({ nullable: false })
     fecha_hora: Date;
 
     @Column({ nullable: false })
     duracion_minutos: number;       
 
-    @Column({ type: 'varchar' })
+    @Column({ type: 'varchar' , nullable: true})
     nivel: string;
 
     @Column()
     capacidad_maxima: number;
 
-    @Column()
-    descripcion: string;
+    @Column({ nullable: true })
+    descripcion?: string;
 
     @ManyToMany(() => Alumno)
     @JoinTable()

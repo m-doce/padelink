@@ -3,6 +3,8 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --toast-bg: #ffffff;
+  --toast-border: #e2e8f0;
 }
 
 @theme inline {
@@ -16,6 +18,8 @@
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
+    --toast-bg: #18181b;
+    --toast-border: #27272a;
   }
 }
 
@@ -23,4 +27,43 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* React Datepicker Custom Styling */
+.react-datepicker {
+  @apply bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-2xl font-sans overflow-hidden;
+}
+
+.react-datepicker__header {
+  @apply bg-zinc-50 dark:bg-zinc-800 border-b border-zinc-100 dark:border-zinc-700 p-4;
+}
+
+.react-datepicker__current-month, 
+.react-datepicker-time__header,
+.react-datepicker__day-name {
+  @apply text-zinc-900 dark:text-zinc-100 font-bold;
+}
+
+.react-datepicker__day {
+  @apply text-zinc-700 dark:text-zinc-300 hover:bg-lime-100 dark:hover:bg-lime-900/30 rounded-lg transition-colors;
+}
+
+.react-datepicker__day--selected {
+  @apply bg-lime-500 text-white hover:bg-lime-600;
+}
+
+.react-datepicker__day--keyboard-selected {
+  @apply bg-lime-100 dark:bg-lime-900/30 text-lime-700 dark:text-lime-400;
+}
+
+.react-datepicker__time-container {
+  @apply border-l border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50;
+}
+
+.react-datepicker__time-list-item {
+  @apply hover:bg-lime-100 dark:hover:bg-lime-900/30 text-zinc-700 dark:text-zinc-300;
+}
+
+.react-datepicker__time-list-item--selected {
+  @apply bg-lime-500 text-white hover:bg-lime-600;
 }
