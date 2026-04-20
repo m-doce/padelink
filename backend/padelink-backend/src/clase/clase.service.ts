@@ -61,43 +61,38 @@ export class ClaseService {
     return this.claseRepository.save(nuevaClase);
   }
 
-  async reservarClase(claseId: number, usuarioId: number) {
-    // 1. Buscamos la clase con sus alumnos inscritos
-    const clase = await this.claseRepository.findOne({ 
-      where: { id: claseId },
-      relations: ['alumnos_inscritos'] 
-    });
+  private verificarDisponibilidad(clase: Clase, usuarioId: number): void {
+  const yaInscrito = clase.alumnos_inscritos.some(a => a.usuario_id === usuarioId);
+  if (yaInscrito) {
+    throw new BadRequestException('Ya estás inscrito en esta clase');
+  }
 
-    if (!clase) {
-      throw new NotFoundException('Clase no encontrada');
-    }
+  if (clase.alumnos_inscritos.length >= clase.capacidad_maxima) {
+    throw new BadRequestException('La clase está completa');
+  }
+}
 
-    // 2. Buscamos al alumno por su usuario_id
-    const alumno = await this.alumnoRepository.findOne({ where: { usuario_id: usuarioId } });
-    if (!alumno) {
-      throw new NotFoundException('Perfil de alumno no encontrado');
-    }
+  async reservarClase (claseId: number, usuarioId: number){
+    const [clase, alumno] = await Promise.all([
+      this.claseRepository.findOne({
+        where: {id: claseId},
+        relations: ['alumnos_inscritos']
+      }), 
+      this.alumnoRepository.findOne({
+        where: { usuario_id: usuarioId}
+      })
+    ])
 
-    // 3. Verificamos si ya está inscrito
-    const yaInscrito = clase.alumnos_inscritos.some(a => a.usuario_id === usuarioId);
-    if (yaInscrito) {
-      throw new BadRequestException('Ya estás inscrito en esta clase');
-    }
+    if (!clase) throw new NotFoundException('Clase no encontrada');
+    if (!alumno) throw new NotFoundException('Alumno no encontrado');
 
-    // 4. Verificamos capacidad
-    if (clase.alumnos_inscritos.length >= clase.capacidad_maxima) {
-      throw new BadRequestException('La clase está completa');
-    }
-
-    // 5. Agregamos al alumno y guardamos
+    this.verificarDisponibilidad(clase, alumno.usuario_id);
     clase.alumnos_inscritos.push(alumno);
-    
-    // Actualizamos el estado si se completó la capacidad
     if (clase.alumnos_inscritos.length === clase.capacidad_maxima) {
-      clase.estado = EstadoEnum.COMPLETA;
-    }
+    clase.estado = EstadoEnum.COMPLETA;
+  }
 
-    return this.claseRepository.save(clase);
+  return this.claseRepository.save(clase);
   }
   
   async findAll() {
