@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Club } from './entities/club.entity';
@@ -25,6 +25,12 @@ export class ClubService {
     }
 
     async create(createClubDto: CreateClubDto): Promise <Club> {
+        // Verificar si el nombre ya existe
+        const existingClub = await this.clubRepository.findOne({ where: { nombre: createClubDto.nombre } });
+        if (existingClub) {
+            throw new BadRequestException('El nombre del club ya existe');
+        }
+
         const club = this.clubRepository.create(createClubDto);
         return this.clubRepository.save(club);
     }
