@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Club } from './entities/club.entity';
@@ -16,7 +16,9 @@ export class ClubService {
     }
 
     async findOne(id: number): Promise<Club | null> {
-        return this.clubRepository.findOne({ where: { club_id: id } });
+        const club = await this.clubRepository.findOne({ where: { club_id: id } });
+        if (!club) throw new NotFoundException('Club no encontrado');
+        return club;
     }
 
     async update(id: number, updateClubDto: UpdateClubDto): Promise<Club | null> {
