@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { CreateClaseDto } from './dto/create-clase.dto';
 import { UpdateClaseDto } from './dto/update-clase.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Clase, EstadoEnum } from './entities/clase.entity';
+import { Clase, EstadoEnum, TipoEnum } from './entities/clase.entity';
 import { In, Repository } from 'typeorm';
 import { ProfesorService } from '../profesor/profesor.service';
 import { ClubService } from '../club/club.service';
@@ -49,10 +49,12 @@ export class ClaseService {
       fecha_hora: new Date(createClaseDto.fecha_hora),
       duracion_minutos: createClaseDto.duracion_minutos,
       nivel: createClaseDto.nivel,
-      capacidad_maxima: createClaseDto.capacidad_maxima,
+      capacidad_maxima: createClaseDto.tipo_clase === TipoEnum.LIBRE
+      ? 4 // LIMITE FIJO PARA LAS CLASES LIBRES ,
+      : createClaseDto.capacidad_maxima,
       descripcion: createClaseDto.descripcion,
       tipo_clase: createClaseDto.tipo_clase,
-      estado: createClaseDto.estado,
+      estado: EstadoEnum.DISPONIBLE, //Siempre arranca en disponible
       profesor: profesor,
       club: club,
       alumnos_inscritos: alumnos
@@ -100,10 +102,12 @@ export class ClaseService {
   }
 
   async findOne(id: number) {
-    return this.claseRepository.findOne({ 
+    const clase = await this.claseRepository.findOne({ 
       where: { id },
       relations: ['profesor', 'profesor.usuario', 'alumnos_inscritos', 'club']
     });
+    if (!clase) throw new NotFoundException('Clase no encontrada');
+    return clase;
   }
 
   async findByProfesor(profesorId: number) {

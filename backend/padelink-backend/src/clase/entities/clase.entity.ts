@@ -10,7 +10,7 @@ export enum EstadoEnum {
 }
 
 export enum TipoEnum {
-    CERRADA = 'CERRADA',
+    LIBRE = 'LIBRE',
     GRUPAL = 'GRUPAL',
 }
 
@@ -47,7 +47,7 @@ export class Clase {
     @JoinTable()
     alumnos_inscritos: Alumno[];
 
-    @Column({ type: 'enum', enum: TipoEnum, default: TipoEnum.GRUPAL })
+    @Column({ type: 'enum', enum: TipoEnum})
     tipo_clase: TipoEnum;
 
     @Column({ type: 'enum', enum: EstadoEnum, default: EstadoEnum.DISPONIBLE })
