@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request } from '@nestjs/common';
 import { ClaseService } from './clase.service';
 import { CreateClaseDto } from './dto/create-clase.dto';
 import { UpdateClaseDto } from './dto/update-clase.dto';
@@ -12,6 +12,15 @@ export class ClaseController {
   @Post()
   create(@Body() createClaseDto: CreateClaseDto) {
     return this.claseService.create(createClaseDto);
+  }
+
+  @Post(':id/reservar')
+  async reservarClase(
+    @Param('id') id: string,
+    @Request() req
+  ) {
+    const usuarioId = req.user.id; 
+    return this.claseService.reservarClase(+id, usuarioId);
   }
 
   @Get()

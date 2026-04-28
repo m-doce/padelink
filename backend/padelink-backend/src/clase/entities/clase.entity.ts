@@ -10,7 +10,7 @@ export enum EstadoEnum {
 }
 
 export enum TipoEnum {
-    CERRADA = 'CERRADA',
+    LIBRE = 'LIBRE',
     GRUPAL = 'GRUPAL',
 }
 
@@ -24,26 +24,30 @@ export class Clase {
     @JoinColumn({ name: 'profesorId'})
     profesor: Profesor;
 
+    @ManyToOne(() => Club)
+    @JoinColumn({ name: 'clubId'})
+    club: Club;
+
     @Column({ nullable: false })
     fecha_hora: Date;
 
     @Column({ nullable: false })
     duracion_minutos: number;       
 
-    @Column({ type: 'varchar' })
+    @Column({ type: 'varchar' , nullable: true})
     nivel: string;
 
     @Column()
     capacidad_maxima: number;
 
-    @Column()
-    descripcion: string;
+    @Column({ nullable: true })
+    descripcion?: string;
 
     @ManyToMany(() => Alumno)
     @JoinTable()
     alumnos_inscritos: Alumno[];
 
-    @Column({ type: 'enum', enum: TipoEnum, default: TipoEnum.GRUPAL })
+    @Column({ type: 'enum', enum: TipoEnum})
     tipo_clase: TipoEnum;
 
     @Column({ type: 'enum', enum: EstadoEnum, default: EstadoEnum.DISPONIBLE })

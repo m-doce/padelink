@@ -21,6 +21,11 @@ type Profesor = {
   linkAjpp?: string;
   promedioCalificacion: string;
   imageUrl?: string;
+  club?: {
+    club_id: number;
+    nombre: string;
+    ubicacion: string;
+  };
 };
 
 export default function ProfessorsPage() {
@@ -129,9 +134,22 @@ export default function ProfessorsPage() {
                     </div>
                   </div>
 
-                  <p className="mb-6 line-clamp-3 text-sm text-zinc-600 dark:text-zinc-400">
-                    {prof.bio}
+                  <p className="mb-4 line-clamp-3 text-sm text-zinc-600 dark:text-zinc-400">
+                    {prof.bio || "Sin descripción disponible"}
                   </p>
+
+                  {prof.club && (
+                    <div className="mb-4 flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      <span className="font-medium">{prof.club.nombre}</span>
+                      {prof.club.ubicacion && (
+                        <span className="opacity-70">• {prof.club.ubicacion}</span>
+                      )}
+                    </div>
+                  )}
 
                   <div className="mt-auto flex items-center justify-between border-t border-zinc-100 pt-4 dark:border-zinc-800">
                     <div className="flex flex-col">

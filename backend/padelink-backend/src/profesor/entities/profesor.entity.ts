@@ -20,7 +20,11 @@ export class Profesor {
   bio: string;
 
   @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
-  precioPorClase: string;
+  precioClaseIndividual: number;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  precioClaseGrupal: number;
+
 
   @Column({ type: 'enum', enum: ManoDominante, nullable: true })
   manoDominante: ManoDominante;
