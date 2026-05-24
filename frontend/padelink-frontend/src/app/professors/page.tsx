@@ -5,28 +5,7 @@ import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import { api } from "@/lib/api";
 
-// Mock types based on your entities
-type Usuario = {
-  nombre: string;
-  apellido: string;
-  email: string;
-};
-
-type Profesor = {
-  usuario_id: number;
-  usuario: Usuario;
-  bio: string;
-  precioPorClase: string;
-  manoDominante: "diestro" | "zurdo";
-  linkAjpp?: string;
-  promedioCalificacion: string;
-  imageUrl?: string;
-  club?: {
-    club_id: number;
-    nombre: string;
-    ubicacion: string;
-  };
-};
+import { Profesor } from "@/types";
 
 export default function ProfessorsPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -39,8 +18,9 @@ export default function ProfessorsPage() {
       try {
         const data = await api.get<Profesor[]>("/profesor");
         setProfessors(data);
-      } catch (err: any) {
-        setError(err.message || "Error al cargar profesores");
+      } catch (err: unknown) {
+        const errorMsg = err instanceof Error ? err.message : "Error al cargar profesores";
+        setError(errorMsg);
       } finally {
         setLoading(false);
       }
@@ -123,9 +103,11 @@ export default function ProfessorsPage() {
                       </h3>
                     </Link>
                     <div className="mt-1 flex flex-wrap gap-2">
-                      <span className="inline-flex items-center rounded-md bg-zinc-100 px-2 py-1 text-xs font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
-                        {prof.manoDominante?.toLowerCase() === "diestro" ? "Diestro ✋" : "Zurdo 🤚"}
-                      </span>
+                      {prof.manoDominante && (
+                        <span className="inline-flex items-center rounded-md bg-zinc-100 px-2 py-1 text-xs font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
+                          {prof.manoDominante.toLowerCase() === "diestro" ? "Diestro ✋" : "Zurdo 🤚"}
+                        </span>
+                      )}
                       {prof.linkAjpp && (
                         <span className="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 dark:bg-blue-900/20 dark:text-blue-400">
                           AJPP 🔗
@@ -155,7 +137,7 @@ export default function ProfessorsPage() {
                     <div className="flex flex-col">
                       <span className="text-xs text-zinc-500 dark:text-zinc-500">Precio por clase</span>
                       <span className="text-lg font-bold text-zinc-900 dark:text-zinc-50">
-                        ${prof.precioPorClase}
+                        ${prof.precioClaseIndividual || "N/A"}
                       </span>
                     </div>
                     <Link 

@@ -10,58 +10,19 @@ import { parse, format, isValid } from "date-fns";
 import { es } from "date-fns/locale";
 import DatePicker, { registerLocale } from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { useAuth } from "@/context/AuthContext";
+import { ProfesorProfile, Clase, Club } from "@/types";
 
 registerLocale("es", es);
-
-type Usuario = {
-  id: number;
-  nombre: string;
-  apellido: string;
-  email: string;
-  telefono: string;
-};
-
-type ProfesorProfile = {
-  bio: string;
-  precioPorClase: number;
-  manoDominante: string;
-  linkAjpp: string;
-  usuario: Usuario;
-};
-
-type Clase = {
-  id: number;
-  fecha_hora: string;
-  duracion_minutos: number;
-  nivel: string;
-  capacidad_maxima: number;
-  alumnos_inscritos: any[];
-  estado: string;
-  descripcion?: string;
-  club?: {
-    club_id: number;
-    nombre: string;
-    ubicacion: string;
-  };
-  profesor?: {
-    usuario_id: number;
-    usuario: Usuario;
-  };
-};
 
 type FilterState = {
   fecha: string;
   estado: string;
 };
 
-type Club = {
-  club_id: number;
-  nombre: string;
-  ubicacion: string;
-};
-
 export default function ProfessorDashboard() {
   const router = useRouter();
+  const { user, token, login } = useAuth();
   const [activeTab, setActiveTab] = useState<"classes" | "history" | "profile">("classes");
   const [profile, setProfile] = useState<ProfesorProfile | null>(null);
   const [classes, setClasses] = useState<Clase[]>([]);
@@ -98,8 +59,7 @@ export default function ProfessorDashboard() {
     descripcion: "",
   });
 
-  // Alumnos únicos del profesor (panel lateral)
-  const [alumnos, setAlumnos] = useState<any[]>([]);
+  const [alumnos, setAlumnos] = useState<Array<{ usuario_id: number; usuario: { nombre: string; apellido: string; email: string } }>>([]);
 
   // Cerrar dropdown al hacer click fuera
   useEffect(() => {
@@ -115,12 +75,9 @@ export default function ProfessorDashboard() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const userStr = localStorage.getItem('user');
-      if (!userStr) {
-        router.push("/login");
+      if (!user) {
         return;
       }
-      const user = JSON.parse(userStr);
 
       try {
         const [profData, classesData, clubsData] = await Promise.all([
@@ -129,59 +86,70 @@ export default function ProfessorDashboard() {
           api.get<Club[]>("/club")
         ]);
         setProfile(profData);
-         setClasses(classesData);
-         setClubs(clubsData);
+        setClasses(classesData);
+        setClubs(clubsData);
         
         // Extraer alumnos únicos de todas las clases
-        const uniqueAlumnos = new Map<string, any>();
+        const uniqueAlumnos = new Map<string, { usuario_id: number; usuario: { nombre: string; apellido: string; email: string } }>();
         classesData.forEach((cls: Clase) => {
-          cls.alumnos_inscritos?.forEach((alumno: any) => {
-            if (!uniqueAlumnos.has(alumno.usuario_id)) {
-              uniqueAlumnos.set(alumno.usuario_id, alumno);
+          cls.alumnos_inscritos?.forEach((alumno) => {
+            if (!uniqueAlumnos.has(String(alumno.usuario_id))) {
+              uniqueAlumnos.set(String(alumno.usuario_id), alumno);
             }
           });
         });
         setAlumnos(Array.from(uniqueAlumnos.values()));
-      } catch (err: any) {
+      } catch (err: unknown) {
+        const errorMsg = err instanceof Error ? err.message : "Error al cargar datos";
         console.error("Error loading dashboard", err);
-        setError(err.message || "Error al cargar datos");
+        setError(errorMsg);
       } finally {
         setLoading(false);
       }
     };
     fetchData();
-  }, [router]);
+  }, [user]);
 
   // --- HANDLERS ---
 
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!profile) return;
-    const userStr = localStorage.getItem('user');
-    const user = JSON.parse(userStr!);
+    if (!profile || !user) return;
 
     try {
       const payload = {
-        ...profile,
         nombre: profile.usuario.nombre,
         apellido: profile.usuario.apellido,
         email: profile.usuario.email,
-        telefono: profile.usuario.telefono
+        telefono: profile.usuario.telefono,
+        bio: profile.bio,
+        precioClaseIndividual: profile.precioClaseIndividual,
+        manoDominante: profile.manoDominante,
+        linkAjpp: profile.linkAjpp
       };
       
       const updatedProfile = await api.patch<ProfesorProfile>(`/profesor/${user.usuario_id}`, payload);
       setProfile(updatedProfile);
       
-      const newUser = { ...user, ...updatedProfile.usuario };
-      localStorage.setItem('user', JSON.stringify(newUser));
-      window.dispatchEvent(new Event('auth-change'));
+      if (token) {
+        login({
+          access_token: token,
+          user: {
+            ...user,
+            nombre: updatedProfile.usuario.nombre,
+            apellido: updatedProfile.usuario.apellido,
+            email: updatedProfile.usuario.email,
+          }
+        });
+      }
       
       toast.success("¡Perfil actualizado!", {
         description: "Los cambios se guardaron correctamente.",
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : "No se pudieron guardar los cambios.";
       toast.error("Error al actualizar", {
-        description: err.message || "No se pudieron guardar los cambios.",
+        description: errorMsg,
       });
     }
   };
@@ -241,12 +209,13 @@ export default function ProfessorDashboard() {
         ubicacion: "A definir" 
       });
       setClubs([...clubs, newClub]);
-      setNewClass({ ...newClass, clubId: newClub.club_id });
+      setNewClass({ ...newClass, clubId: newClub.id ?? newClub.club_id ?? null });
       setClubSearch(newClub.nombre);
       setShowClubDropdown(false);
       toast.success(`Club "${newClub.nombre}" creado y seleccionado`);
-    } catch (err: any) {
-      toast.error("Error al crear el club", { description: err.message });
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : "Error al crear club";
+      toast.error("Error al crear el club", { description: errorMsg });
     }
   };
 
@@ -260,8 +229,7 @@ export default function ProfessorDashboard() {
 
   const handleSaveClass = async (e: React.FormEvent) => {
     e.preventDefault();
-    const userStr = localStorage.getItem('user');
-    const user = JSON.parse(userStr!);
+    if (!user) return;
 
     try {
       if (!selectedDate) {
@@ -275,7 +243,7 @@ export default function ProfessorDashboard() {
       }
 
       const fecha_hora = selectedDate.toISOString();
-      const payload: any = {
+      const payload: Record<string, unknown> = {
         fecha_hora,
         duracion_minutos: newClass.duracion_minutos,
         nivel: newClass.nivel || null,
@@ -298,9 +266,10 @@ export default function ProfessorDashboard() {
       }
       
       closeModal();
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : "No se pudo guardar la clase.";
       toast.error("Error", {
-        description: err.message || "No se pudo guardar la clase.",
+        description: errorMsg,
       });
     }
   };
@@ -550,8 +519,8 @@ export default function ProfessorDashboard() {
                     <label className="block text-sm font-medium mb-1">Precio por Clase ($)</label>
                     <input 
                       type="number" 
-                      value={profile.precioPorClase}
-                      onChange={(e) => setProfile({...profile, precioPorClase: Number(e.target.value)})}
+                      value={profile.precioClaseIndividual}
+                      onChange={(e) => setProfile({...profile, precioClaseIndividual: Number(e.target.value)})}
                       className="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 px-3 py-2 text-sm focus:ring-2 focus:ring-lime-500 outline-none dark:bg-zinc-950"
                     />
                   </div>
@@ -614,7 +583,7 @@ export default function ProfessorDashboard() {
                    <div className="relative datepicker-container">
                      <DatePicker
                        selected={selectedDate}
-                       onChange={(date) => setSelectedDate(date)}
+                       onChange={(date: Date | null) => setSelectedDate(date)}
                        showTimeSelect
                        timeFormat="HH:mm"
                        timeIntervals={15}
@@ -670,7 +639,7 @@ export default function ProfessorDashboard() {
                              try {
                                const res = await api.post<Club>("/club", { nombre: "A domicilio", ubicacion: "Dirección del alumno" });
                                setClubs([...clubs, res]);
-                               setNewClass({ ...newClass, clubId: res.club_id });
+                               setNewClass({ ...newClass, clubId: res.id ?? res.club_id ?? null });
                                setClubSearch(res.nombre);
                                setShowClubDropdown(false);
                              } catch (e) {}
@@ -689,7 +658,7 @@ export default function ProfessorDashboard() {
                            key={club.club_id}
                            type="button"
                            onClick={() => {
-                             setNewClass({ ...newClass, clubId: club.club_id });
+                             setNewClass({ ...newClass, clubId: club.id ?? club.club_id ?? null });
                              setClubSearch(club.nombre);
                              setShowClubDropdown(false);
                            }}

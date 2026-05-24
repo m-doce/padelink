@@ -1,15 +1,16 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, Inject } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { UserService } from '../usuario/usuario.service';
+import type { IUsuarioService } from '../interfaces/IUsuarioService';
 import { LoginDto } from './dto/login.dto';
 import { CreateUsuarioDto } from '../usuario/dto/create-usuario.dto';
-import * as bcrypt from 'bcrypt';
+import { PasswordService } from '../usuario/password.service';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private readonly userService: UserService,
+    @Inject('IUsuarioService') private readonly userService: IUsuarioService,
     private readonly jwtService: JwtService,
+    private readonly passwordService: PasswordService,
   ) {}
 
   async register(createUsuarioDto: CreateUsuarioDto) {
@@ -23,7 +24,7 @@ export class AuthService {
       throw new UnauthorizedException('Credenciales inválidas');
     }
 
-    const isPasswordValid = await bcrypt.compare(loginDto.password, user.password);
+    const isPasswordValid = await this.passwordService.comparePassword(loginDto.password, user.password);
 
     if (!isPasswordValid) {
       throw new UnauthorizedException('Credenciales inválidas');

@@ -21,6 +21,9 @@ export const api = {
     const response = await fetch(`${BACKEND_URL}${path}`, {
       headers: await getHeaders(),
     });
+    if (response.status === 401 && typeof window !== 'undefined') {
+      window.dispatchEvent(new Event("api-unauthorized"));
+    }
     if (!response.ok) {
       const error = await response.json().catch(() => ({ message: 'Error desconocido' }));
       throw new Error(error.message || 'Error en la petición');
@@ -28,12 +31,15 @@ export const api = {
     return response.json();
   },
 
-  async post<T>(path: string, body: any): Promise<T> {
+  async post<T>(path: string, body: unknown): Promise<T> {
     const response = await fetch(`${BACKEND_URL}${path}`, {
       method: 'POST',
       headers: await getHeaders(),
       body: JSON.stringify(body),
     });
+    if (response.status === 401 && typeof window !== 'undefined') {
+      window.dispatchEvent(new Event("api-unauthorized"));
+    }
     if (!response.ok) {
       const error = await response.json().catch(() => ({ message: 'Error desconocido' }));
       throw new Error(error.message || 'Error en la petición');
@@ -41,12 +47,15 @@ export const api = {
     return response.json();
   },
 
-  async patch<T>(path: string, body: any): Promise<T> {
+  async patch<T>(path: string, body: unknown): Promise<T> {
     const response = await fetch(`${BACKEND_URL}${path}`, {
       method: 'PATCH',
       headers: await getHeaders(),
       body: JSON.stringify(body),
     });
+    if (response.status === 401 && typeof window !== 'undefined') {
+      window.dispatchEvent(new Event("api-unauthorized"));
+    }
     if (!response.ok) {
       const error = await response.json().catch(() => ({ message: 'Error desconocido' }));
       throw new Error(error.message || 'Error en la petición');
@@ -59,6 +68,9 @@ export const api = {
       method: 'DELETE',
       headers: await getHeaders(),
     });
+    if (response.status === 401 && typeof window !== 'undefined') {
+      window.dispatchEvent(new Event("api-unauthorized"));
+    }
     if (!response.ok) {
       const error = await response.json().catch(() => ({ message: 'Error desconocido' }));
       throw new Error(error.message || 'Error en la petición');

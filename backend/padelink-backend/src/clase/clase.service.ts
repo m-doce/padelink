@@ -1,10 +1,10 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ConflictException, Inject } from '@nestjs/common';
 import { CreateClaseDto } from './dto/create-clase.dto';
 import { UpdateClaseDto } from './dto/update-clase.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Clase, EstadoEnum, TipoEnum } from './entities/clase.entity';
 import { In, Repository } from 'typeorm';
-import { ProfesorService } from '../profesor/profesor.service';
+import type { IProfesorService } from '../interfaces/IProfesorService';
 import { ClubService } from '../club/club.service';
 import { AlumnoService } from '../alumno/alumno.service';
 import { Alumno } from '../alumno/entities/alumno.entity';
@@ -17,7 +17,7 @@ export class ClaseService {
     private readonly claseRepository: Repository<Clase>,
     @InjectRepository(Alumno)
     private readonly alumnoRepository: Repository<Alumno>,
-    private readonly profesorService: ProfesorService,
+    @Inject('IProfesorService') private readonly profesorService: IProfesorService,
     private readonly clubService: ClubService,
   ) {}
 
@@ -148,11 +148,11 @@ export class ClaseService {
     if (!alumno) throw new NotFoundException('Alumno no encontrado');
 
     if (clase.alumnos_inscritos.some(a => a.usuario_id === alumnoId)) {
-      throw new Error('El alumno ya está inscrito en esta clase');
+      throw new ConflictException('El alumno ya está inscrito en esta clase');
     }
 
     if (clase.alumnos_inscritos.length >= clase.capacidad_maxima) {
-      throw new Error('La clase está llena');
+      throw new BadRequestException('La clase está llena');
     }
 
     clase.alumnos_inscritos.push(alumno);

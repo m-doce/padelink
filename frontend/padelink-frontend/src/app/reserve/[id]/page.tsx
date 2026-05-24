@@ -8,24 +8,13 @@ import Modal from "@/components/Modal";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 
-// --- TYPES ---
-type Clase = {
-  id: number;
-  profesor: {
-    usuario: { nombre: string; apellido: string };
-    precioPorClase: number;
-  };
-  fecha_hora: string;
-  duracion_minutos: number;
-  nivel: string;
-  capacidad_maxima: number;
-  alumnos_inscritos: any[];
-  descripcion: string;
-};
+import { Clase } from "@/types";
+import { useAuth } from "@/context/AuthContext";
 
 export default function ReservePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
+  const { user } = useAuth();
   const [clase, setClase] = useState<Clase | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -40,8 +29,9 @@ export default function ReservePage({ params }: { params: Promise<{ id: string }
       try {
         const data = await api.get<Clase>(`/clase/${id}`);
         setClase(data);
-      } catch (err: any) {
-        setError(err.message || "Error al cargar los detalles de la clase");
+      } catch (err: unknown) {
+        const errorMsg = err instanceof Error ? err.message : "Error al cargar los detalles de la clase";
+        setError(errorMsg);
       } finally {
         setLoading(false);
       }
@@ -52,13 +42,10 @@ export default function ReservePage({ params }: { params: Promise<{ id: string }
   const handleConfirmReservation = async () => {
     if (!clase) return;
     
-    const userStr = localStorage.getItem('user');
-    if (!userStr) {
+    if (!user) {
       router.push("/login");
       return;
     }
-    
-    const user = JSON.parse(userStr);
 
     setSubmitting(true);
     setError("");
@@ -67,10 +54,11 @@ export default function ReservePage({ params }: { params: Promise<{ id: string }
       await api.post(`/clase/${id}/reserve`, { alumnoId: user.usuario_id });
       setSuccess(true);
       toast.success("¡Reserva confirmada!");
-    } catch (err: any) {
-      setError(err.message || "No se pudo confirmar la reserva");
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : "No se pudo confirmar la reserva";
+      setError(errorMsg);
       toast.error("Error al reservar", {
-        description: err.message || "No se pudo completar la reserva.",
+        description: errorMsg,
       });
     } finally {
       setSubmitting(false);
@@ -188,7 +176,7 @@ export default function ReservePage({ params }: { params: Promise<{ id: string }
               <div className="space-y-3 mb-6">
                 <div className="flex justify-between text-sm">
                   <span className="text-zinc-500 dark:text-zinc-400">Precio de la clase</span>
-                  <span>${clase.profesor?.precioPorClase}</span>
+                  <span>${clase.profesor?.precioClaseIndividual || "N/A"}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-zinc-500 dark:text-zinc-400">Cargos de servicio</span>
@@ -196,7 +184,7 @@ export default function ReservePage({ params }: { params: Promise<{ id: string }
                 </div>
                 <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800 flex justify-between font-bold text-lg">
                   <span>Total</span>
-                  <span className="text-lime-600 dark:text-lime-400">${clase.profesor?.precioPorClase}</span>
+                  <span className="text-lime-600 dark:text-lime-400">${clase.profesor?.precioClaseIndividual || "N/A"}</span>
                 </div>
               </div>
 

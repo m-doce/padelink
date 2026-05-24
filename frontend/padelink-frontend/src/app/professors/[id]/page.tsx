@@ -5,46 +5,7 @@ import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import { api } from "@/lib/api";
 
-// --- TYPES ---
-type Usuario = {
-  nombre: string;
-  apellido: string;
-  email: string;
-};
-
-type Profesor = {
-  usuario_id: number;
-  usuario: Usuario;
-  bio: string;
-  precioPorClase: string;
-  manoDominante: "diestro" | "zurdo";
-  linkAjpp?: string;
-  promedioCalificacion: string;
-  imageUrl?: string;
-};
-
-type Club = {
-  id: number;
-  nombre: string;
-  direccion: string;
-};
-
-type Alumno = {
-  usuario_id: number;
-  nombre: string;
-};
-
-type Clase = {
-  id: number;
-  club: Club;
-  fecha_hora: string;
-  duracion_minutos: number;
-  nivel: string;
-  capacidad_maxima: number;
-  descripcion: string;
-  alumnos_inscritos: Alumno[];
-  estado: "DISPONIBLE" | "CANCELADA" | "COMPLETA";
-};
+import { Profesor, Clase } from "@/types";
 
 export default function ProfessorProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -62,8 +23,9 @@ export default function ProfessorProfilePage({ params }: { params: Promise<{ id:
         ]);
         setProfessor(profData);
         setClasses(classesData);
-      } catch (err: any) {
-        setError(err.message || "Error al cargar datos del profesor");
+      } catch (err: unknown) {
+        const errorMsg = err instanceof Error ? err.message : "Error al cargar datos del profesor";
+        setError(errorMsg);
       } finally {
         setLoading(false);
       }
@@ -112,9 +74,11 @@ export default function ProfessorProfilePage({ params }: { params: Promise<{ id:
                     {professor.usuario.nombre} {professor.usuario.apellido}
                   </h1>
                   <div className="mt-2 flex flex-wrap gap-2">
-                    <span className="inline-flex items-center rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
-                      {professor.manoDominante?.toLowerCase() === "diestro" ? "Diestro ✋" : "Zurdo 🤚"}
-                    </span>
+                    {professor.manoDominante && (
+                      <span className="inline-flex items-center rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
+                        {professor.manoDominante.toLowerCase() === "diestro" ? "Diestro ✋" : "Zurdo 🤚"}
+                      </span>
+                    )}
                     <span className="inline-flex items-center rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
                       ★ {professor.promedioCalificacion}
                     </span>
@@ -127,7 +91,7 @@ export default function ProfessorProfilePage({ params }: { params: Promise<{ id:
                 </div>
                 <div className="text-right">
                   <span className="block text-sm text-zinc-500 dark:text-zinc-400">Precio base</span>
-                  <span className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">${professor.precioPorClase}</span>
+                  <span className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">${professor.precioClaseIndividual || "N/A"}</span>
                   <span className="text-sm text-zinc-500 dark:text-zinc-400"> / clase</span>
                 </div>
               </div>

@@ -1,4 +1,4 @@
-import { Usuario } from 'src/usuario/entities/usuario.entity';
+import { Usuario } from '../../usuario/entities/usuario.entity';
 import { Entity, Column, PrimaryColumn, OneToOne, JoinColumn } from 'typeorm';
 
 export enum ManoDominante {
@@ -33,7 +33,7 @@ export class Profesor {
   linkAjpp: string;
 
   @Column({ type: 'decimal', precision: 3, scale: 2, default: 0, nullable: true })
-  promedioCalificacion: string;
+  promedioCalificacion: number;
 
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   fechaCreacion: Date;

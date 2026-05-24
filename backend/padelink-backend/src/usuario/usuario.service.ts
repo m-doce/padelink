@@ -1,21 +1,21 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { UpdateUsuarioDto } from './dto/update-usuario.dto';
 import { Repository } from 'typeorm';
 import { UserRole, Usuario } from './entities/usuario.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
-import { AlumnoService } from '../alumno/alumno.service';
-import { ProfesorService } from '../profesor/profesor.service';
-import * as bcrypt from 'bcrypt';
+import { PasswordService } from './password.service';
+import { RegistrationService } from './registration.service';
+import { IUsuarioService } from '../interfaces/IUsuarioService';
 
 @Injectable()
-export class UserService {
+export class UserService implements IUsuarioService {
 
     constructor(
         @InjectRepository(Usuario)
         private readonly userRepository: Repository<Usuario>,
-        private readonly alumnoService: AlumnoService,
-        private readonly profesorService: ProfesorService,
+        private readonly passwordService: PasswordService,
+        private readonly registrationService: RegistrationService,
     ) {}
 
     async findALl(): Promise<Usuario[]> {
@@ -32,7 +32,7 @@ export class UserService {
 
     async update(id: number, updateUsuarioDto: UpdateUsuarioDto): Promise<Usuario | null> {
         if (updateUsuarioDto.password) {
-            updateUsuarioDto.password = await bcrypt.hash(updateUsuarioDto.password, 10);
+            updateUsuarioDto.password = await this.passwordService.hashPassword(updateUsuarioDto.password);
         }
         await this.userRepository.update(id, updateUsuarioDto);
         return this.userRepository.findOne({where: {id}});
@@ -40,23 +40,16 @@ export class UserService {
 
     async create(createUsuarioDto: CreateUsuarioDto): Promise<Usuario> {
         try{
-            const hashedPassword = await bcrypt.hash(createUsuarioDto.password, 10);
+            const hashedPassword = await this.passwordService.hashPassword(createUsuarioDto.password);
             const user = this.userRepository.create({
                 ...createUsuarioDto,
                 password: hashedPassword,
             });
             const savedUser = await this.userRepository.save(user);
-            switch(createUsuarioDto.tipoUsuario) {
-                case UserRole.ALUMNO:
-                    await this.alumnoService.create(savedUser.id);
-                    break;
-                case UserRole.PROFESOR:
-                    await this.profesorService.create(savedUser.id);
-                    break;
-            }
+            await this.registrationService.registerProfile(savedUser.id, createUsuarioDto.tipoUsuario);
             return savedUser;
         } catch (error) {
-            throw new Error('Error al crear el usuario');
+            throw new BadRequestException('Error al crear el usuario');
         }
     }
 

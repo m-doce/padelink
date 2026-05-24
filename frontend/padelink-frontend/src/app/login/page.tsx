@@ -5,9 +5,12 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
+import { LoginResponse } from "@/types";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { login } = useAuth();
   const [form, setForm] = useState({
     email: "",
     password: "",
@@ -19,13 +22,10 @@ export default function LoginPage() {
     setSubmitting(true);
 
     try {
-      const data: any = await api.post("/auth/login", form);
+      const data = await api.post<LoginResponse>("/auth/login", form);
 
       if (data.access_token) {
-        localStorage.setItem('token', data.access_token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        
-        window.dispatchEvent(new Event('auth-change'));
+        login(data);
         
         toast.success("¡Bienvenido de nuevo!", {
           description: `Sesión iniciada como ${data.user.nombre}`,
@@ -37,9 +37,10 @@ export default function LoginPage() {
         
         router.push(dashboardPath);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : "Email o contraseña incorrectos";
       toast.error("Error al iniciar sesión", {
-        description: err.message || "Email o contraseña incorrectos",
+        description: errorMsg,
       });
     } finally {
       setSubmitting(false);
