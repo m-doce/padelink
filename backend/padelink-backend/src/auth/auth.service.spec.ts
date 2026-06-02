@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service';
 import { JwtService } from '@nestjs/jwt';
+import { UserService } from '../usuario/usuario.service';
 import { PasswordService } from '../usuario/password.service';
 import { UnauthorizedException } from '@nestjs/common';
 import { UserRole } from '../usuario/entities/usuario.entity';
@@ -28,7 +29,7 @@ describe('AuthService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
-        { provide: 'IUsuarioService', useValue: usuarioServiceMock },
+        { provide: UserService, useValue: usuarioServiceMock },
         { provide: JwtService, useValue: jwtServiceMock },
         { provide: PasswordService, useValue: passwordServiceMock },
       ],

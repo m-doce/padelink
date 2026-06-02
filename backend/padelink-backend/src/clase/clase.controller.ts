@@ -7,7 +7,9 @@ import { AuthGuard } from '@nestjs/passport';
 @Controller('clase')
 @UseGuards(AuthGuard('jwt'))
 export class ClaseController {
-  constructor(private readonly claseService: ClaseService) {}
+  constructor(
+    private readonly claseService: ClaseService
+  ) {}
 
   @Post()
   create(@Body() createClaseDto: CreateClaseDto) {

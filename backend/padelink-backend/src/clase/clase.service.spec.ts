@@ -4,6 +4,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Clase } from './entities/clase.entity';
 import { Alumno } from '../alumno/entities/alumno.entity';
 import { ClubService } from '../club/club.service';
+import { ProfesorService } from '../profesor/profesor.service';
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 
 describe('ClaseService', () => {
@@ -36,7 +37,7 @@ describe('ClaseService', () => {
         ClaseService,
         { provide: getRepositoryToken(Clase), useValue: claseRepositoryMock },
         { provide: getRepositoryToken(Alumno), useValue: alumnoRepositoryMock },
-        { provide: 'IProfesorService', useValue: profesorServiceMock },
+        { provide: ProfesorService, useValue: profesorServiceMock },
         { provide: ClubService, useValue: clubServiceMock },
       ],
     }).compile();

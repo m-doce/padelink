@@ -4,10 +4,9 @@ import { Repository } from 'typeorm';
 import { Profesor } from './entities/profesor.entity';
 import { UpdateProfesorDto } from './dto/update-profesor';
 import { Usuario } from '../usuario/entities/usuario.entity';
-import { IProfesorService } from '../interfaces/IProfesorService';
 
 @Injectable()
-export class ProfesorService implements IProfesorService {
+export class ProfesorService {
     constructor(
         @InjectRepository(Profesor)
         private readonly profesorRepository: Repository<Profesor>,

@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Club } from './entities/club.entity';
 import { CreateClubDto } from './dto/create-club.dto';
 import { UpdateClubDto } from './dto/update-club.dto';
+
 @Injectable()
 export class ClubService {
     constructor(

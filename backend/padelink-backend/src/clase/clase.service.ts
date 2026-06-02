@@ -1,12 +1,11 @@
-import { Injectable, NotFoundException, BadRequestException, ConflictException, Inject } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { CreateClaseDto } from './dto/create-clase.dto';
 import { UpdateClaseDto } from './dto/update-clase.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Clase, EstadoEnum, TipoEnum } from './entities/clase.entity';
 import { In, Repository } from 'typeorm';
-import type { IProfesorService } from '../interfaces/IProfesorService';
+import { ProfesorService } from '../profesor/profesor.service';
 import { ClubService } from '../club/club.service';
-import { AlumnoService } from '../alumno/alumno.service';
 import { Alumno } from '../alumno/entities/alumno.entity';
 
 @Injectable()
@@ -17,7 +16,7 @@ export class ClaseService {
     private readonly claseRepository: Repository<Clase>,
     @InjectRepository(Alumno)
     private readonly alumnoRepository: Repository<Alumno>,
-    @Inject('IProfesorService') private readonly profesorService: IProfesorService,
+    private readonly profesorService: ProfesorService,
     private readonly clubService: ClubService,
   ) {}
 

@@ -1,6 +1,5 @@
 import { Controller, Post, Body, Get, Param, Patch, UseGuards } from '@nestjs/common';
 import { AlumnoService } from './alumno.service';
-import { createAlumnoDto } from './dto/create-alumno.dto';
 import { UpdateAlumnoDto } from './dto/update-alumno.dto';
 import { AuthGuard } from '@nestjs/passport';
 

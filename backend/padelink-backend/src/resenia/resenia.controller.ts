@@ -7,7 +7,9 @@ import { UpdateReseniaDto } from './dto/update-resenia.dto';
 @Controller('resenia')
 @UseGuards(AuthGuard('jwt'))
 export class ReseniaController {
-  constructor(private readonly reseniaService: ReseniaService) {}
+  constructor(
+    private readonly reseniaService: ReseniaService
+  ) {}
 
   @Post()
   create(@Body() createReseniaDto: CreateReseniaDto) {

@@ -1,5 +1,5 @@
-import type { IProfesorService } from '../interfaces/IProfesorService';
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Inject } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { ProfesorService } from './profesor.service';
 import { CreateProfesorDto } from './dto/create-profesor.dto';
 import { UpdateProfesorDto } from './dto/update-profesor';
 import { AuthGuard } from '@nestjs/passport';
@@ -9,7 +9,7 @@ import { AuthGuard } from '@nestjs/passport';
 @UseGuards(AuthGuard('jwt'))
 export class ProfesorController {
 
-    constructor(@Inject('IProfesorService') private readonly profesorService: IProfesorService){}
+    constructor(private readonly profesorService: ProfesorService){}
 
     @Get()
     findAll() {

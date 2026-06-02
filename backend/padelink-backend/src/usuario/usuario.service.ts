@@ -6,10 +6,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
 import { PasswordService } from './password.service';
 import { RegistrationService } from './registration.service';
-import { IUsuarioService } from '../interfaces/IUsuarioService';
 
 @Injectable()
-export class UserService implements IUsuarioService {
+export class UserService {
 
     constructor(
         @InjectRepository(Usuario)

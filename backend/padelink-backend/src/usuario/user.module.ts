@@ -16,13 +16,10 @@ import { ProfesorModule } from '../profesor/profesor.module';
   ],
   controllers: [UserController],
   providers: [
-    {
-      provide: 'IUsuarioService',
-      useClass: UserService,
-    },
+    UserService,
     PasswordService,
     RegistrationService,
   ],
-  exports: ['IUsuarioService', PasswordService],
+  exports: [UserService, PasswordService],
 })
 export class UserModule {}
