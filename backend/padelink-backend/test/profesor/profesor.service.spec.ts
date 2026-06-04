@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ProfesorService } from './profesor.service';
+import { ProfesorService } from '../../src/profesor/profesor.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Profesor } from './entities/profesor.entity';
-import { Usuario } from '../usuario/entities/usuario.entity';
+import { Profesor } from '../../src/profesor/entities/profesor.entity';
+import { Usuario } from '../../src/usuario/entities/usuario.entity';
 
 describe('ProfesorService', () => {
   let service: ProfesorService;

@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ReseniaController } from './resenia.controller';
-import { ReseniaService } from './resenia.service';
+import { ReseniaController } from '../../src/resenia/resenia.controller';
+import { ReseniaService } from '../../src/resenia/resenia.service';
 
 describe('ReseniaController', () => {
   let controller: ReseniaController;

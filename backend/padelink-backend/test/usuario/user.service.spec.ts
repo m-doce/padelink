@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { UserService } from './usuario.service';
+import { UserService } from '../../src/usuario/usuario.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Usuario, UserRole } from './entities/usuario.entity';
-import { PasswordService } from './password.service';
-import { RegistrationService } from './registration.service';
+import { Usuario, UserRole } from '../../src/usuario/entities/usuario.entity';
+import { PasswordService } from '../../src/usuario/password.service';
+import { RegistrationService } from '../../src/usuario/registration.service';
 import { BadRequestException } from '@nestjs/common';
 
 describe('UserService', () => {
