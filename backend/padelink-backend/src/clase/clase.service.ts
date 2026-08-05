@@ -166,4 +166,22 @@ export class ClaseService {
     clase.alumnos_inscritos = clase.alumnos_inscritos.filter(a => a.usuario_id !== alumnoId);
     return this.claseRepository.save(clase);
   }
+
+  async devolverClasesGrupales(){
+    return this.claseRepository.find({
+      where: {
+        tipo_clase: TipoEnum.GRUPAL
+      },
+      relations: ['profesor', 'profesor.usuario', 'alumnos_inscritos', 'club']
+    });
+  }
+
+  async devolverClasesLibres(){
+    return this.claseRepository.find({
+      where: {
+        tipo_clase: TipoEnum.LIBRE
+      },
+      relations: ['profesor', 'profesor.usuario', 'alumnos_inscritos', 'club']
+    });
+  }
 }

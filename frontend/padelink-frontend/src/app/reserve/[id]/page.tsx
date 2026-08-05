@@ -11,9 +11,11 @@ import { toast } from "sonner";
 // --- TYPES ---
 type Clase = {
   id: number;
+  tipo_clase: "GRUPAL" | "LIBRE";
   profesor: {
     usuario: { nombre: string; apellido: string };
-    precioPorClase: number;
+    precioClaseIndividual: number;
+    precioClaseGrupal: number;
   };
   fecha_hora: string;
   duracion_minutos: number;
@@ -31,6 +33,10 @@ export default function ReservePage({ params }: { params: Promise<{ id: string }
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
+
+  // Para clases LIBRES: tipo de reserva (individual/grupal) y cantidad
+  const [reservaTipo, setReservaTipo] = useState<"individual" | "grupal">("individual");
+  const [reservaCantidad, setReservaCantidad] = useState(1);
 
   // Modal de confirmación
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -64,7 +70,14 @@ export default function ReservePage({ params }: { params: Promise<{ id: string }
     setError("");
 
     try {
-      await api.post(`/clase/${id}/reserve`, { alumnoId: user.usuario_id });
+      // Para clases LIBRES, enviar tipo y cantidad
+      const payload: any = { alumnoId: user.usuario_id };
+      if (clase.tipo_clase === "LIBRE") {
+        payload.tipoReserva = reservaTipo;
+        payload.cantidadPersonas = reservaCantidad;
+      }
+      
+      await api.post(`/clase/${id}/reserve`, payload);
       setSuccess(true);
       toast.success("¡Reserva confirmada!");
     } catch (err: any) {
@@ -185,18 +198,99 @@ export default function ReservePage({ params }: { params: Promise<{ id: string }
           <div className="w-full md:w-80">
             <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 border border-zinc-200 dark:border-zinc-800 shadow-sm sticky top-24">
               <h3 className="font-bold text-lg mb-4">Resumen de Pago</h3>
-              <div className="space-y-3 mb-6">
-                <div className="flex justify-between text-sm">
-                  <span className="text-zinc-500 dark:text-zinc-400">Precio de la clase</span>
-                  <span>${clase.profesor?.precioPorClase}</span>
+              
+              {/* Selector para clases LIBRES */}
+              {clase.tipo_clase === "LIBRE" && (
+                <div className="mb-6 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
+                  <label className="block text-sm font-medium mb-3">Tipo de Reserva</label>
+                  <div className="flex gap-2 mb-3">
+                    <button
+                      type="button"
+                      onClick={() => { setReservaTipo("individual"); setReservaCantidad(1); }}
+                      className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition ${
+                        reservaTipo === "individual" 
+                          ? "bg-purple-600 text-white" 
+                          : "bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700"
+                      }`}
+                    >
+                      Individual
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setReservaTipo("grupal"); setReservaCantidad(2); }}
+                      className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition ${
+                        reservaTipo === "grupal" 
+                          ? "bg-purple-600 text-white" 
+                          : "bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700"
+                      }`}
+                    >
+                      Grupal
+                    </button>
+                  </div>
+                  
+                  {/* Selector de cantidad para grupal */}
+                  {reservaTipo === "grupal" && (
+                    <div>
+                      <label className="block text-xs text-zinc-500 dark:text-zinc-400 mb-1">Cantidad de personas</label>
+                      <select
+                        value={reservaCantidad}
+                        onChange={(e) => setReservaCantidad(Number(e.target.value))}
+                        className="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 p-2 text-sm dark:bg-zinc-950"
+                      >
+                        <option value={2}>2 personas</option>
+                        <option value={3}>3 personas</option>
+                        <option value={4}>4 personas</option>
+                      </select>
+                    </div>
+                  )}
                 </div>
+              )}
+
+              <div className="space-y-3 mb-6">
+                {/* Mostrar precios según el tipo de clase y reserva */}
+                {clase.tipo_clase === "LIBRE" ? (
+                  // Clase LIBRE: mostrar ambos precios
+                  <>
+                    {reservaTipo === "individual" ? (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-zinc-500 dark:text-zinc-400">Precio individual</span>
+                        <span>${clase.profesor?.precioClaseIndividual}</span>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-zinc-500 dark:text-zinc-400">Precio por persona</span>
+                          <span>${clase.profesor?.precioClaseGrupal}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-zinc-500 dark:text-zinc-400">Cantidad personas</span>
+                          <span>x{reservaCantidad}</span>
+                        </div>
+                      </>
+                    )}
+                  </>
+                ) : (
+                  // Clase GRUPAL: solo precio grupal
+                  <div className="flex justify-between text-sm">
+                    <span className="text-zinc-500 dark:text-zinc-400">Precio por persona</span>
+                    <span>${clase.profesor?.precioClaseGrupal}</span>
+                  </div>
+                )}
+                
                 <div className="flex justify-between text-sm">
                   <span className="text-zinc-500 dark:text-zinc-400">Cargos de servicio</span>
                   <span>$0</span>
                 </div>
+                
                 <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800 flex justify-between font-bold text-lg">
                   <span>Total</span>
-                  <span className="text-lime-600 dark:text-lime-400">${clase.profesor?.precioPorClase}</span>
+                  <span className="text-lime-600 dark:text-lime-400">
+                    ${clase.tipo_clase === "LIBRE" 
+                      ? (reservaTipo === "individual" 
+                          ? clase.profesor?.precioClaseIndividual 
+                          : (clase.profesor?.precioClaseGrupal * reservaCantidad))
+                      : clase.profesor?.precioClaseGrupal}
+                  </span>
                 </div>
               </div>
 

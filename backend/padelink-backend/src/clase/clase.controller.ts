@@ -62,4 +62,14 @@ export class ClaseController {
   remove(@Param('id') id: string) {
     return this.claseService.remove(+id);
   }
+
+  @Get('grupales')
+  devolverClasesGrupales(){
+    return this.claseService.devolverClasesGrupales();
+  }
+
+  @Get('libres')
+  devolverClasesLibres(){
+    return this.claseService.devolverClasesLibres();
+  }
 }

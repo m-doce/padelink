@@ -16,7 +16,8 @@ type Profesor = {
   usuario_id: number;
   usuario: Usuario;
   bio: string;
-  precioPorClase: string;
+  precioClaseGrupal: number;
+  precioClaseIndividual: number;
   manoDominante: "diestro" | "zurdo";
   linkAjpp?: string;
   promedioCalificacion: string;
@@ -154,9 +155,14 @@ export default function ProfessorsPage() {
                   <div className="mt-auto flex items-center justify-between border-t border-zinc-100 pt-4 dark:border-zinc-800">
                     <div className="flex flex-col">
                       <span className="text-xs text-zinc-500 dark:text-zinc-500">Precio por clase</span>
-                      <span className="text-lg font-bold text-zinc-900 dark:text-zinc-50">
-                        ${prof.precioPorClase}
-                      </span>
+                      <div className="text-sm">
+                        <span className="font-bold text-zinc-900 dark:text-zinc-50">
+                          ${prof.precioClaseGrupal}
+                        </span>
+                        <span className="text-xs text-zinc-500 dark:text-zinc-400 ml-1">
+                          (grupal) / ${prof.precioClaseIndividual} (individual)
+                        </span>
+                      </div>
                     </div>
                     <Link 
                       href={`/professors/${prof.usuario_id}`}

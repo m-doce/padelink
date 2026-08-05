@@ -1,9 +1,10 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from '../usuario/usuario.service';
 import { LoginDto } from './dto/login.dto';
 import { CreateUsuarioDto } from '../usuario/dto/create-usuario.dto';
 import * as bcrypt from 'bcrypt';
+import { UserRole } from '../usuario/entities/usuario.entity';
 
 @Injectable()
 export class AuthService {
@@ -13,6 +14,9 @@ export class AuthService {
   ) {}
 
   async register(createUsuarioDto: CreateUsuarioDto) {
+    if (createUsuarioDto.tipoUsuario === UserRole.ADMIN) {
+      throw new ForbiddenException('Las cuentas de administrador no se crean desde el registro público');
+    }
     return this.userService.create(createUsuarioDto);
   }
 

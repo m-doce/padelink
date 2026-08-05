@@ -1,0 +1,15 @@
+{
+  "name": "padelink-root",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "install:all": "npm install && cd backend/padelink-backend && npm install && cd ../../frontend/padelink-frontend && npm install",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd backend/padelink-backend && npm run start:dev",
+    "dev:frontend": "cd frontend/padelink-frontend && npm run dev",
+    "build": "cd backend/padelink-backend && npm run build && cd ../../frontend/padelink-frontend && npm run build"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

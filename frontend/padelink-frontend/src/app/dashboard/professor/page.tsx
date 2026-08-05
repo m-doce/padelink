@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import Modal from "@/components/Modal";
 import { toast } from "sonner";
-import { parse, format, isValid } from "date-fns";
 import { es } from "date-fns/locale";
 import DatePicker, { registerLocale } from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -23,7 +22,8 @@ type Usuario = {
 
 type ProfesorProfile = {
   bio: string;
-  precioPorClase: number;
+  precioClaseIndividual: number;
+  precioClaseGrupal: number;
   manoDominante: string;
   linkAjpp: string;
   usuario: Usuario;
@@ -35,6 +35,7 @@ type Clase = {
   duracion_minutos: number;
   nivel: string;
   capacidad_maxima: number;
+  tipo_clase: "GRUPAL" | "LIBRE";
   alumnos_inscritos: any[];
   estado: string;
   descripcion?: string;
@@ -46,6 +47,8 @@ type Clase = {
   profesor?: {
     usuario_id: number;
     usuario: Usuario;
+    precioClaseGrupal: number;
+    precioClaseIndividual: number;
   };
 };
 
@@ -96,6 +99,7 @@ export default function ProfessorDashboard() {
     clubId: null as number | null,
     capacidad_maxima: 4,
     descripcion: "",
+    tipo_clase: "GRUPAL" as "GRUPAL" | "LIBRE",
   });
 
   // Alumnos únicos del profesor (panel lateral)
@@ -212,6 +216,7 @@ export default function ProfessorDashboard() {
       clubId: cls.club?.club_id || null,
       capacidad_maxima: cls.capacidad_maxima,
       descripcion: cls.descripcion || "",
+      tipo_clase: cls.tipo_clase || "GRUPAL",
     });
     setClubSearch(cls.club?.nombre || "");
     setShowClassModal(true);
@@ -230,6 +235,7 @@ export default function ProfessorDashboard() {
       clubId: null,
       capacidad_maxima: 4,
       descripcion: "",
+      tipo_clase: "GRUPAL",
     });
   };
 
@@ -281,7 +287,7 @@ export default function ProfessorDashboard() {
         nivel: newClass.nivel || null,
         capacidad_maxima: newClass.capacidad_maxima,
         descripcion: newClass.descripcion || null,
-        tipo_clase: "GRUPAL",
+        tipo_clase: newClass.tipo_clase,
       };
 
       if (editingClass) {
@@ -547,14 +553,26 @@ export default function ProfessorDashboard() {
 
                 <div className="grid grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium mb-1">Precio por Clase ($)</label>
+                    <label className="block text-sm font-medium mb-1">Precio Clase Grupal ($)</label>
                     <input 
                       type="number" 
-                      value={profile.precioPorClase}
-                      onChange={(e) => setProfile({...profile, precioPorClase: Number(e.target.value)})}
+                      value={profile.precioClaseGrupal}
+                      onChange={(e) => setProfile({...profile, precioClaseGrupal: Number(e.target.value)})}
                       className="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 px-3 py-2 text-sm focus:ring-2 focus:ring-lime-500 outline-none dark:bg-zinc-950"
                     />
                   </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Precio Clase Individual ($)</label>
+                    <input 
+                      type="number" 
+                      value={profile.precioClaseIndividual}
+                      onChange={(e) => setProfile({...profile, precioClaseIndividual: Number(e.target.value)})}
+                      className="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 px-3 py-2 text-sm focus:ring-2 focus:ring-lime-500 outline-none dark:bg-zinc-950"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium mb-1">Mano Dominante</label>
                     <select 
@@ -614,7 +632,7 @@ export default function ProfessorDashboard() {
                    <div className="relative datepicker-container">
                      <DatePicker
                        selected={selectedDate}
-                       onChange={(date) => setSelectedDate(date)}
+                       onChange={(date: Date | null) => setSelectedDate(date)}
                        showTimeSelect
                        timeFormat="HH:mm"
                        timeIntervals={15}
@@ -753,7 +771,31 @@ export default function ProfessorDashboard() {
                     </div>
                  </div>
 
-                 {/* Cupos */}
+                 {/* Tipo de Clase */}
+                 <div>
+                    <label className="block text-xs font-medium mb-1">Tipo de Clase</label>
+                    <select 
+                      className="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 p-2.5 text-sm dark:bg-zinc-950 focus:ring-2 focus:ring-lime-500 outline-none"
+                      value={newClass.tipo_clase} 
+                      onChange={e => setNewClass({
+                        ...newClass, 
+                        tipo_clase: e.target.value as "GRUPAL" | "LIBRE",
+                        // Resetear capacidad según el tipo
+                        capacidad_maxima: e.target.value === "GRUPAL" ? 4 : 1
+                      })}
+                    >
+                      <option value="GRUPAL">Clase Grupal</option>
+                      <option value="LIBRE">Clase Libre</option>
+                    </select>
+                    <p className="text-xs text-zinc-500 mt-1">
+                      {newClass.tipo_clase === "GRUPAL" 
+                        ? "Los alumnos se inscriben hasta completar los cupos disponibles."
+                        : "Una vez reservada, la clase se marca como completada."}
+                    </p>
+                 </div>
+
+                 {/* Cupos - solo para grupal */}
+                 {newClass.tipo_clase === "GRUPAL" && (
                  <div>
                     <label className="block text-xs font-medium mb-1">Cupos disponibles</label>
                     <input 
@@ -765,6 +807,7 @@ export default function ProfessorDashboard() {
                       onChange={e => setNewClass({...newClass, capacidad_maxima: Math.max(1, Math.min(20, Number(e.target.value)))})}
                     />
                  </div>
+                 )}
 
                  {/* Estado (solo al editar) */}
                  {editingClass && (
@@ -834,6 +877,9 @@ function ClassCard({ clase, onEdit, onDelete }: { clase: Clase; onEdit: () => vo
           }`}>
             {clase.estado}
           </span>
+          <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-lime-100 text-lime-800 dark:bg-lime-900/30 dark:text-lime-400">
+            {clase.tipo_clase === "GRUPAL" ? "Clase Grupal" : "Clase Libre"}
+          </span>
           {clase.club && (
             <span className="text-xs text-zinc-500 flex items-center gap-1">
               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -850,6 +896,14 @@ function ClassCard({ clase, onEdit, onDelete }: { clase: Clase; onEdit: () => vo
         <p className="text-sm text-zinc-500 mt-1">
           {clase.nivel ? `Nivel ${clase.nivel}` : "Sin nivel asignado"} • {clase.duracion_minutos} min • {clase.alumnos_inscritos?.length || 0}/{clase.capacidad_maxima} alumnos
         </p>
+        {clase.profesor && (
+          <p className="text-sm font-medium text-lime-600 dark:text-lime-400 mt-1">
+            {clase.tipo_clase === "GRUPAL" 
+              ? `$${clase.profesor.precioClaseGrupal} por persona`
+              : `$${clase.profesor.precioClaseIndividual} (individual) / $${clase.profesor.precioClaseGrupal} (grupo)`
+            }
+          </p>
+        )}
         {clase.descripcion && (
           <p className="text-sm text-zinc-400 mt-1 line-clamp-1">{clase.descripcion}</p>
         )}

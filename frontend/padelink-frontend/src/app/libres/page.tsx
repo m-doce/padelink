@@ -35,7 +35,7 @@ type Clase = {
   alumnos_inscritos: any[];
 };
 
-export default function Home() {
+export default function ClasesLibres() {
   const [clases, setClases] = useState<Clase[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -43,10 +43,10 @@ export default function Home() {
   useEffect(() => {
     const fetchClases = async () => {
       try {
-        const data = await api.get<Clase[]>("/clase/grupales");
+        const data = await api.get<Clase[]>("/clase/libres");
         setClases(data);
       } catch (err: any) {
-        setError(err.message || "Error al cargar las clases grupales");
+        setError(err.message || "Error al cargar las clases libres");
       } finally {
         setLoading(false);
       }
@@ -60,7 +60,7 @@ export default function Home() {
 
       <main className="flex-1 container mx-auto px-6 py-12 lg:px-12">
         <h1 className="mb-8 text-4xl font-bold tracking-tight">
-          Clases <span className="text-lime-600 dark:text-lime-400">Grupales</span>
+          Clases <span className="text-blue-600 dark:text-blue-400">Libres</span>
         </h1>
 
         {loading ? (
@@ -73,7 +73,7 @@ export default function Home() {
           </div>
         ) : clases.length === 0 ? (
           <div className="text-center py-20">
-            <p className="text-lg text-zinc-500">No hay clases grupales disponibles en este momento.</p>
+            <p className="text-lg text-zinc-500">No hay clases libres disponibles en este momento.</p>
           </div>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -88,8 +88,8 @@ export default function Home() {
                   className="group flex flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition-all hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900"
                 >
                   {/* Cabecera con horario y ubicación destacados */}
-                  <div className="bg-lime-50 p-6 dark:bg-lime-900/20">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-lime-700 dark:text-lime-400">
+                  <div className="bg-blue-50 p-6 dark:bg-blue-900/20">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-blue-700 dark:text-blue-400">
                       {fecha.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" })}
                     </p>
                     <h3 className="mt-1 text-2xl font-bold text-zinc-900 dark:text-white">
@@ -119,18 +119,29 @@ export default function Home() {
                       </p>
                     )}
 
-                    {/* Precio y cupos */}
-                    <div className="mt-4 flex items-center justify-between">
-                      <p className="text-xl font-bold text-lime-600 dark:text-lime-400">
-                        ${clase.profesor.precioClaseGrupal}
-                        <span className="text-xs font-normal text-zinc-500 dark:text-zinc-500">/clase</span>
-                      </p>
+                    {/* Precios y cupos */}
+                    <div className="mt-4 flex flex-wrap items-center gap-2">
+                      <div className="flex flex-col">
+                        <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-500">Individual</span>
+                        <p className="text-lg font-bold text-zinc-900 dark:text-white">
+                          ${clase.profesor.precioClaseIndividual}
+                        </p>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-500">Grupal (max 4)</span>
+                        <p className="text-lg font-bold text-zinc-900 dark:text-white">
+                          ${clase.profesor.precioClaseGrupal}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-3">
                       <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
                         cuposDisponibles > 0
                           ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
                           : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
                       }`}>
-                        {cuposDisponibles === 0 ? "Completa" : `${cuposDisponibles} cupos`}
+                        {cuposDisponibles === 0 ? "Completa" : `${cuposDisponibles} cupos disponibles`}
                       </span>
                     </div>
                   </div>
