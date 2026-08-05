@@ -9,7 +9,9 @@ import { UserRole } from '../usuario/entities/usuario.entity';
 @UseGuards(AuthGuard('jwt'), RolesGuard)
 @Roles(UserRole.ADMIN)
 export class AdminController {
-  constructor(private readonly adminService: AdminService) {}
+  constructor(
+    private readonly adminService: AdminService
+  ) {}
 
   @Get()
   findAll() {

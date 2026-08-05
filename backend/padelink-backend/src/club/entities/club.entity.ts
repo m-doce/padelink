@@ -7,16 +7,16 @@ export class Club {
     @PrimaryGeneratedColumn()
     club_id: number;
 
-    @Column()
+    @Column({ nullable: true })
     descripcion: string;
 
     @Column()
     nombre: string;
 
-    @Column()
+    @Column({ nullable: true })
     ubicacion: string;
 
-    @Column()
+    @Column({ nullable: true })
     ciudad: string;
 
     @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })

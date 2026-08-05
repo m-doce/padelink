@@ -1,11 +1,15 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { ReseniaService } from './resenia.service';
 import { CreateReseniaDto } from './dto/create-resenia.dto';
 import { UpdateReseniaDto } from './dto/update-resenia.dto';
 
 @Controller('resenia')
+@UseGuards(AuthGuard('jwt'))
 export class ReseniaController {
-  constructor(private readonly reseniaService: ReseniaService) {}
+  constructor(
+    private readonly reseniaService: ReseniaService
+  ) {}
 
   @Post()
   create(@Body() createReseniaDto: CreateReseniaDto) {

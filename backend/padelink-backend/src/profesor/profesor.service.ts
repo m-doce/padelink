@@ -35,23 +35,21 @@ export class ProfesorService {
     async update(id: number, updateProfesorDto: UpdateProfesorDto) {
         const { nombre, apellido, email, telefono, ...profesorData } = updateProfesorDto;
 
-        // Actualizar datos del Usuario si se proporcionan
-        if (nombre || apellido || email || telefono) {
-            const userUpdate: any = {};
-            if (nombre) userUpdate.nombre = nombre;
-            if (apellido) userUpdate.apellido = apellido;
-            if (email) userUpdate.email = email;
-            if (telefono) userUpdate.telefono = telefono;
+        const userUpdate = {
+            ...(nombre && { nombre }),
+            ...(apellido && { apellido }),
+            ...(email && { email }),
+            ...(telefono && { telefono })
+        };
 
+        if (Object.keys(userUpdate).length > 0) {
             await this.userRepository.update(id, userUpdate);
         }
 
-        // Eliminar 'usuario' del profesorData si existe para evitar errores en el update del profesor
         if ((profesorData as any).usuario) {
             delete (profesorData as any).usuario;
         }
 
-        // Actualizar datos del Profesor
         if (Object.keys(profesorData).length > 0) {
             await this.profesorRepository.update(id, profesorData);
         }

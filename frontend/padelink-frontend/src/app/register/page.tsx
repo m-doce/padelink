@@ -82,9 +82,10 @@ export default function RegisterPage() {
     try {
       await api.post("/auth/register", form);
       router.push("/login");
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : "No se pudo registrar el usuario";
       setErrors({
-        general: err.message || "No se pudo registrar el usuario",
+        general: errorMsg,
       });
     } finally {
       setSubmitting(false);

@@ -1,6 +1,6 @@
-import { Clase } from 'src/clase/entities/clase.entity';
-import { ManoDominante } from 'src/profesor/entities/profesor.entity';
-import { Usuario } from 'src/usuario/entities/usuario.entity';
+import { Clase } from '../../clase/entities/clase.entity';
+import { ManoDominante } from '../../profesor/entities/profesor.entity';
+import { Usuario } from '../../usuario/entities/usuario.entity';
 import { Entity, JoinColumn, Column, OneToOne, PrimaryColumn, ManyToMany } from 'typeorm';
 
 export enum Genero {

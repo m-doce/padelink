@@ -28,6 +28,7 @@ type Clase = {
 export default function ReservePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
+  const { user } = useAuth();
   const [clase, setClase] = useState<Clase | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -46,8 +47,9 @@ export default function ReservePage({ params }: { params: Promise<{ id: string }
       try {
         const data = await api.get<Clase>(`/clase/${id}`);
         setClase(data);
-      } catch (err: any) {
-        setError(err.message || "Error al cargar los detalles de la clase");
+      } catch (err: unknown) {
+        const errorMsg = err instanceof Error ? err.message : "Error al cargar los detalles de la clase";
+        setError(errorMsg);
       } finally {
         setLoading(false);
       }
@@ -58,13 +60,10 @@ export default function ReservePage({ params }: { params: Promise<{ id: string }
   const handleConfirmReservation = async () => {
     if (!clase) return;
     
-    const userStr = localStorage.getItem('user');
-    if (!userStr) {
+    if (!user) {
       router.push("/login");
       return;
     }
-    
-    const user = JSON.parse(userStr);
 
     setSubmitting(true);
     setError("");
@@ -80,10 +79,11 @@ export default function ReservePage({ params }: { params: Promise<{ id: string }
       await api.post(`/clase/${id}/reserve`, payload);
       setSuccess(true);
       toast.success("¡Reserva confirmada!");
-    } catch (err: any) {
-      setError(err.message || "No se pudo confirmar la reserva");
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : "No se pudo confirmar la reserva";
+      setError(errorMsg);
       toast.error("Error al reservar", {
-        description: err.message || "No se pudo completar la reserva.",
+        description: errorMsg,
       });
     } finally {
       setSubmitting(false);

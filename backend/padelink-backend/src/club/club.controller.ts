@@ -4,7 +4,9 @@ import { ClubService } from './club.service';
 
 @Controller('club')
 export class ClubController {
-  constructor(private readonly clubService: ClubService) {}
+  constructor(
+    private readonly clubService: ClubService
+  ) {}
 
   @Get()
   findAll() {

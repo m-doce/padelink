@@ -6,16 +6,8 @@ import Navbar from "@/components/Navbar";
 import Modal from "@/components/Modal";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
-
-// --- TYPES ---
-type AlumnoProfile = {
-  fecha_nacimiento: string;
-  nivel: string;
-  mano_dominante: string;
-  genero: string;
-  posicion: string;
-  promedio_calificacion: number;
-};
+import { useAuth } from "@/context/AuthContext";
+import { AlumnoProfile, Reserva } from "@/types";
 
 // Helper to calculate age from date string
 function calculateAge(birthDate: string) {
@@ -30,19 +22,8 @@ function calculateAge(birthDate: string) {
   return age;
 }
 
-type Reserva = {
-  id: number;
-  profesor: {
-    usuario: { nombre: string; apellido: string };
-  };
-  club: { nombre: string };
-  fecha_hora: string;
-  duracion_minutos: number;
-  nivel: string;
-  estado: string;
-};
-
 export default function StudentDashboard() {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<"reservations" | "profile">("reservations");
   const [profile, setProfile] = useState<AlumnoProfile | null>(null);
   const [reservations, setReservations] = useState<Reserva[]>([]);
@@ -55,9 +36,7 @@ export default function StudentDashboard() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const userStr = localStorage.getItem('user');
-      if (!userStr) return;
-      const user = JSON.parse(userStr);
+      if (!user) return;
 
       try {
         const [profData, resData] = await Promise.all([
@@ -66,51 +45,53 @@ export default function StudentDashboard() {
         ]);
         setProfile(profData);
         setReservations(resData);
-      } catch (err: any) {
-        setError(err.message || "Error al cargar datos");
+      } catch (err: unknown) {
+        const errorMsg = err instanceof Error ? err.message : "Error al cargar datos";
+        setError(errorMsg);
       } finally {
         setLoading(false);
       }
     };
     fetchData();
-  }, []);
+  }, [user]);
 
   const handleCancelReservation = async () => {
-    if (!resToCancel) return;
+    if (!resToCancel || !user) return;
     
-    const userStr = localStorage.getItem('user');
-    const user = JSON.parse(userStr!);
     try {
       await api.delete(`/clase/${resToCancel}/reserve/${user.usuario_id}`); 
       setReservations(reservations.filter((r) => r.id !== resToCancel));
       setResToCancel(null);
       toast.success("Reserva cancelada correctamente");
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : "No se pudo cancelar la reserva.";
       toast.error("Error al cancelar", {
-        description: err.message || "No se pudo cancelar la reserva.",
+        description: errorMsg,
       });
     }
   };
 
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!profile) return;
-    
-    const userStr = localStorage.getItem('user');
-    const user = JSON.parse(userStr!);
+    if (!profile || !user) return;
 
     try {
       const payload = {
-        ...profile,
-        edad: calculateAge(profile.fecha_nacimiento)
+        fecha_nacimiento: profile.fecha_nacimiento,
+        edad: calculateAge(profile.fecha_nacimiento),
+        nivel: profile.nivel,
+        mano_dominante: profile.mano_dominante,
+        genero: profile.genero,
+        posicion: profile.posicion,
       };
       await api.patch(`/alumno/${user.usuario_id}`, payload);
       toast.success("¡Perfil actualizado!", {
         description: "Tus datos se guardaron correctamente.",
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : "No se pudo guardar la información.";
       toast.error("Error al actualizar", {
-        description: err.message || "No se pudo guardar la información.",
+        description: errorMsg,
       });
     }
   };
@@ -149,8 +130,8 @@ export default function StudentDashboard() {
         {/* Sidebar */}
         <aside className="w-full md:w-64 bg-white dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 p-6">
           <div className="mb-8 px-4">
-             <h2 className="text-xl font-bold">{JSON.parse(localStorage.getItem('user') || '{}').nombre} {JSON.parse(localStorage.getItem('user') || '{}').apellido}</h2>
-             <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">{JSON.parse(localStorage.getItem('user') || '{}').email}</p>
+             <h2 className="text-xl font-bold">{user?.nombre} {user?.apellido}</h2>
+             <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">{user?.email}</p>
           </div>
           <nav className="flex flex-col gap-2">
             <button
@@ -195,7 +176,7 @@ export default function StudentDashboard() {
                           </span>
                         </div>
                         <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                          <b>Profesor:</b> {res.profesor.usuario.nombre} {res.profesor.usuario.apellido}
+                          <b>Profesor:</b> {res.profesor?.usuario.nombre} {res.profesor?.usuario.apellido}
                         </p>
                         <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
                           {res.duracion_minutos} min • Nivel {res.nivel}
