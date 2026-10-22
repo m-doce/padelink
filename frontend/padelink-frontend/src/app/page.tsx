@@ -3,82 +3,145 @@
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import { useEffect, useState } from "react";
+import { api } from "@/lib/api";
+
+// Types basados en el backend
+type Usuario = {
+  nombre: string;
+  apellido: string;
+};
+
+type Profesor = {
+  precioClaseGrupal: number;
+  precioClaseIndividual: number;
+  usuario: Usuario;
+};
+
+type Club = {
+  nombre: string;
+  ubicacion: string;
+};
+
+type Clase = {
+  id: number;
+  fecha_hora: string;
+  duracion_minutos: number;
+  nivel: string;
+  capacidad_maxima: number;
+  descripcion: string;
+  tipo_clase: "GRUPAL" | "LIBRE";
+  profesor: Profesor;
+  club: Club;
+  alumnos_inscritos: any[];
+};
 
 export default function Home() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [clases, setClases] = useState<Clase[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    setIsLoggedIn(!!localStorage.getItem('token'));
+    const fetchClases = async () => {
+      try {
+        const data = await api.get<Clase[]>("/clase/grupales");
+        setClases(data);
+      } catch (err: any) {
+        setError(err.message || "Error al cargar las clases grupales");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchClases();
   }, []);
 
   return (
-    <div className="flex min-h-screen flex-col bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-50 font-sans">
+    <div className="flex min-h-screen flex-col bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-50 font-sans">
       <Navbar />
 
-      <main className="flex-1">
-        {/* Hero Section */}
-        <section className="relative overflow-hidden py-20 lg:py-32">
-            <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-lime-100 via-white to-white dark:from-lime-900/20 dark:via-zinc-950 dark:to-zinc-950"></div>
-          <div className="container mx-auto px-6 text-center lg:px-12">
-            <h1 className="mb-6 text-4xl font-extrabold tracking-tight sm:text-6xl text-zinc-900 dark:text-white">
-              Lleva tu juego al <span className="text-lime-600 dark:text-lime-400">siguiente nivel</span>
-            </h1>
-            <p className="mx-auto mb-10 max-w-2xl text-lg text-zinc-600 dark:text-zinc-400">
-              Encuentra los mejores profesores, reserva canchas y conecta con otros apasionados del pádel. La comunidad que estabas esperando.
-            </p>
-            <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <Link
-                href={isLoggedIn ? "/professors" : "/register"}
-                className="h-12 rounded-full bg-lime-500 px-8 text-base font-semibold text-white transition-all hover:bg-lime-600 hover:shadow-lg dark:bg-lime-400 dark:text-zinc-900 dark:hover:bg-lime-500"
-                style={{ display: 'flex', alignItems: 'center' }}
-              >
-                {isLoggedIn ? "Buscar clases" : "Empezar ahora"}
-              </Link>
-              <Link
-                href="/professors"
-                className="flex h-12 items-center justify-center rounded-full border border-zinc-200 bg-white px-8 text-base font-semibold text-zinc-900 transition-colors hover:bg-zinc-50 hover:text-lime-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-white dark:hover:bg-zinc-800"
-              >
-                Ver profesores
-              </Link>
-            </div>
-          </div>
-        </section>
+      <main className="flex-1 container mx-auto px-6 py-12 lg:px-12">
+        <h1 className="mb-8 text-4xl font-bold tracking-tight">
+          Clases <span className="text-lime-600 dark:text-lime-400">Grupales</span>
+        </h1>
 
-        {/* Features Grid */}
-        <section className="py-20 bg-zinc-50 dark:bg-zinc-900/50">
-          <div className="container mx-auto px-6 lg:px-12">
-            <div className="grid gap-8 md:grid-cols-3">
-              {/* Feature 1 */}
-              <div className="rounded-2xl bg-white p-8 shadow-sm transition-shadow hover:shadow-md dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800">
-                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-lime-100 text-lime-600 dark:bg-lime-900/30 dark:text-lime-400">
-                    {/* Icon placeholder */}
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-                </div>
-                <h3 className="mb-2 text-xl font-bold">Profesores Expertos</h3>
-                <p className="text-zinc-600 dark:text-zinc-400">Accede a una red de entrenadores certificados listos para mejorar tu técnica.</p>
-              </div>
-               {/* Feature 2 */}
-               <div className="rounded-2xl bg-white p-8 shadow-sm transition-shadow hover:shadow-md dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800">
-                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                </div>
-                <h3 className="mb-2 text-xl font-bold">Reserva Fácil</h3>
-                <p className="text-zinc-600 dark:text-zinc-400">Encuentra y reserva tu cancha favorita en segundos desde cualquier dispositivo.</p>
-              </div>
-               {/* Feature 3 */}
-               <div className="rounded-2xl bg-white p-8 shadow-sm transition-shadow hover:shadow-md dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800">
-                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400">
-                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                </div>
-                <h3 className="mb-2 text-xl font-bold">Comunidad Activa</h3>
-                <p className="text-zinc-600 dark:text-zinc-400">Únete a torneos, encuentra pareja de juego y comparte tu pasión.</p>
-              </div>
-            </div>
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <p className="text-lg text-zinc-500 animate-pulse">Cargando clases...</p>
           </div>
-        </section>
+        ) : error ? (
+          <div className="flex items-center justify-center py-20 text-red-500">
+            <p>{error}</p>
+          </div>
+        ) : clases.length === 0 ? (
+          <div className="text-center py-20">
+            <p className="text-lg text-zinc-500">No hay clases grupales disponibles en este momento.</p>
+          </div>
+        ) : (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {clases.map((clase) => {
+              const fecha = new Date(clase.fecha_hora);
+              const cuposDisponibles = clase.capacidad_maxima - clase.alumnos_inscritos.length;
+
+              return (
+                <Link
+                  key={clase.id}
+                  href={`/reserve/${clase.id}`}
+                  className="group flex flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition-all hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900"
+                >
+                  {/* Cabecera con horario y ubicación destacados */}
+                  <div className="bg-lime-50 p-6 dark:bg-lime-900/20">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-lime-700 dark:text-lime-400">
+                      {fecha.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" })}
+                    </p>
+                    <h3 className="mt-1 text-2xl font-bold text-zinc-900 dark:text-white">
+                      {fecha.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
+                    </h3>
+                    <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400 flex items-center gap-1">
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      {clase.club.nombre}
+                    </p>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-500">{clase.club.ubicacion}</p>
+                  </div>
+
+                  {/* Contenido */}
+                  <div className="flex-1 p-6">
+                    <p className="text-sm font-semibold text-zinc-900 dark:text-white">
+                      {clase.profesor.usuario.nombre} {clase.profesor.usuario.apellido}
+                    </p>
+                    <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-500">
+                      {clase.nivel ? `Nivel ${clase.nivel}` : "Sin nivel"} • {clase.duracion_minutos} min
+                    </p>
+                    {clase.descripcion && (
+                      <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400 line-clamp-2">
+                        {clase.descripcion}
+                      </p>
+                    )}
+
+                    {/* Precio y cupos */}
+                    <div className="mt-4 flex items-center justify-between">
+                      <p className="text-xl font-bold text-lime-600 dark:text-lime-400">
+                        ${clase.profesor.precioClaseGrupal}
+                        <span className="text-xs font-normal text-zinc-500 dark:text-zinc-500">/clase</span>
+                      </p>
+                      <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
+                        cuposDisponibles > 0
+                          ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                          : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                      }`}>
+                        {cuposDisponibles === 0 ? "Completa" : `${cuposDisponibles} cupos`}
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        )}
       </main>
 
-      <footer className="border-t border-zinc-200 bg-white py-12 dark:border-zinc-800 dark:bg-zinc-950">
+      <footer className="border-t border-zinc-200 bg-white py-8 dark:border-zinc-800 dark:bg-zinc-950">
         <div className="container mx-auto px-6 text-center text-sm text-zinc-500 dark:text-zinc-400 lg:px-12">
           <p>&copy; {new Date().getFullYear()} PadeLink. Todos los derechos reservados.</p>
         </div>

@@ -5,7 +5,48 @@ import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import { api } from "@/lib/api";
 
-import { Profesor, Clase } from "@/types";
+// --- TYPES ---
+type Usuario = {
+  nombre: string;
+  apellido: string;
+  email: string;
+};
+
+type Profesor = {
+  usuario_id: number;
+  usuario: Usuario;
+  bio: string;
+  precioClaseIndividual: string;
+  precioClaseGrupal: string;
+  manoDominante: "diestro" | "zurdo";
+  linkAjpp?: string;
+  promedioCalificacion: string;
+  imageUrl?: string;
+};
+
+type Club = {
+  id: number;
+  nombre: string;
+  direccion: string;
+};
+
+type Alumno = {
+  usuario_id: number;
+  nombre: string;
+};
+
+type Clase = {
+  id: number;
+  club: Club;
+  fecha_hora: string;
+  duracion_minutos: number;
+  nivel: string;
+  capacidad_maxima: number;
+  descripcion: string;
+  tipo_clase: "GRUPAL" | "LIBRE";
+  alumnos_inscritos: Alumno[];
+  estado: "DISPONIBLE" | "CANCELADA" | "COMPLETA";
+};
 
 export default function ProfessorProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -90,9 +131,20 @@ export default function ProfessorProfilePage({ params }: { params: Promise<{ id:
                   </div>
                 </div>
                 <div className="text-right">
-                  <span className="block text-sm text-zinc-500 dark:text-zinc-400">Precio base</span>
-                  <span className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">${professor.precioClaseIndividual || "N/A"}</span>
-                  <span className="text-sm text-zinc-500 dark:text-zinc-400"> / clase</span>
+                  {professor.precioClaseGrupal && (
+                    <div className="mb-1">
+                      <span className="block text-sm text-zinc-500 dark:text-zinc-400">Clase Grupal</span>
+                      <span className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">${professor.precioClaseGrupal}</span>
+                      <span className="text-sm text-zinc-500 dark:text-zinc-400"> / clase</span>
+                    </div>
+                  )}
+                  {professor.precioClaseIndividual && (
+                    <div>
+                      <span className="block text-sm text-zinc-500 dark:text-zinc-400">Clase Individual</span>
+                      <span className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">${professor.precioClaseIndividual}</span>
+                      <span className="text-sm text-zinc-500 dark:text-zinc-400"> / clase</span>
+                    </div>
+                  )}
                 </div>
               </div>
               
@@ -129,7 +181,14 @@ export default function ProfessorProfilePage({ params }: { params: Promise<{ id:
                   `}
                 >
                   {/* Availability Badge */}
-                  <div className="absolute right-4 top-4">
+                  <div className="absolute right-4 top-4 flex flex-col gap-2 items-end">
+                    <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ${
+                      clase.tipo_clase === 'LIBRE' 
+                        ? 'bg-purple-50 text-purple-700 ring-1 ring-inset ring-purple-600/20 dark:bg-purple-900/20 dark:text-purple-400'
+                        : 'bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20 dark:bg-blue-900/20 dark:text-blue-400'
+                    }`}>
+                      {clase.tipo_clase === 'LIBRE' ? 'Libre' : 'Grupal'}
+                    </span>
                     {isCancelled ? (
                        <span className="inline-flex items-center rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/10 dark:bg-red-900/20 dark:text-red-400">
                          Cancelada

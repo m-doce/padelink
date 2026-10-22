@@ -5,7 +5,29 @@ import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import { api } from "@/lib/api";
 
-import { Profesor } from "@/types";
+// Mock types based on your entities
+type Usuario = {
+  nombre: string;
+  apellido: string;
+  email: string;
+};
+
+type Profesor = {
+  usuario_id: number;
+  usuario: Usuario;
+  bio: string;
+  precioClaseGrupal: number;
+  precioClaseIndividual: number;
+  manoDominante: "diestro" | "zurdo";
+  linkAjpp?: string;
+  promedioCalificacion: string;
+  imageUrl?: string;
+  club?: {
+    club_id: number;
+    nombre: string;
+    ubicacion: string;
+  };
+};
 
 export default function ProfessorsPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -136,9 +158,14 @@ export default function ProfessorsPage() {
                   <div className="mt-auto flex items-center justify-between border-t border-zinc-100 pt-4 dark:border-zinc-800">
                     <div className="flex flex-col">
                       <span className="text-xs text-zinc-500 dark:text-zinc-500">Precio por clase</span>
-                      <span className="text-lg font-bold text-zinc-900 dark:text-zinc-50">
-                        ${prof.precioClaseIndividual || "N/A"}
-                      </span>
+                      <div className="text-sm">
+                        <span className="font-bold text-zinc-900 dark:text-zinc-50">
+                          ${prof.precioClaseGrupal}
+                        </span>
+                        <span className="text-xs text-zinc-500 dark:text-zinc-400 ml-1">
+                          (grupal) / ${prof.precioClaseIndividual} (individual)
+                        </span>
+                      </div>
                     </div>
                     <Link 
                       href={`/professors/${prof.usuario_id}`}

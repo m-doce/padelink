@@ -1,10 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ClaseService } from './clase.service';
+import { ClaseService } from '../../src/clase/clase.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Clase } from './entities/clase.entity';
-import { Alumno } from '../alumno/entities/alumno.entity';
-import { ClubService } from '../club/club.service';
-import { ProfesorService } from '../profesor/profesor.service';
+import { Clase } from '../../src/clase/entities/clase.entity';
+import { Alumno } from '../../src/alumno/entities/alumno.entity';
+import { ClubService } from '../../src/club/club.service';
+import { ProfesorService } from '../../src/profesor/profesor.service';
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 
 describe('ClaseService', () => {

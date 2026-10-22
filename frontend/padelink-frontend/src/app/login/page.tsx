@@ -31,9 +31,11 @@ export default function LoginPage() {
           description: `Sesión iniciada como ${data.user.nombre}`,
         });
         
-        const dashboardPath = data.user.tipoUsuario === 'PROFESOR' 
-          ? '/dashboard/professor' 
-          : '/dashboard/student';
+        const dashboardPath = data.user.tipoUsuario === 'ADMIN'
+          ? '/admin'
+          : data.user.tipoUsuario === 'PROFESOR'
+            ? '/dashboard/professor'
+            : '/dashboard/student';
         
         router.push(dashboardPath);
       }
