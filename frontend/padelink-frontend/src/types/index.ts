@@ -1,4 +1,4 @@
-export type UserRole = 'ALUMNO' | 'PROFESOR';
+export type UserRole = 'ALUMNO' | 'PROFESOR' | 'ADMIN';
 
 export interface User {
   usuario_id: number;
@@ -13,45 +13,13 @@ export interface LoginResponse {
   user: User;
 }
 
+// Un alumno recién registrado tiene estos datos vacíos hasta que completa su perfil
 export interface AlumnoProfile {
-  fecha_nacimiento: string;
-  nivel: string;
-  mano_dominante: string;
-  genero: string;
-  posicion: string;
-}
-
-export interface ProfesorProfile {
-  usuario_id: number;
-  bio?: string;
-  descripcion?: string;
-  precioClaseIndividual: number;
-  anosExperiencia?: number;
-  manoDominante?: string;
-  linkAjpp?: string;
-  promedioCalificacion?: number;
-  usuario: {
-    nombre: string;
-    apellido: string;
-    email: string;
-    telefono?: string;
-  };
-}
-
-export interface Reserva {
-  id: number;
-  profesor?: {
-    usuario: { nombre: string; apellido: string };
-  };
-  alumno?: {
-    usuario: { nombre: string; apellido: string };
-  };
-  alumnos_inscritos?: any[]; // To simplify based on existing structure, though could be typed if needed
-  club: { nombre: string };
-  fecha_hora: string;
-  duracion_minutos: number;
-  nivel: string;
-  estado: string;
+  fecha_nacimiento: string | null;
+  nivel: string | null;
+  mano_dominante: string | null;
+  genero: string | null;
+  posicion: string | null;
 }
 
 export interface Club {
@@ -77,6 +45,75 @@ export interface Clase {
     usuario_id?: number;
     usuario: { nombre: string; apellido: string };
     precioClaseIndividual?: number;
+  };
+}
+
+// --- Listados públicos de clases y profesores ---
+
+export type TipoClase = 'GRUPAL' | 'LIBRE';
+export type EstadoClase = 'DISPONIBLE' | 'CANCELADA' | 'COMPLETA';
+// Los precios llegan como string desde las columnas decimal de PostgreSQL
+export type Monto = number | string | null | undefined;
+
+export interface ProfesorResumen {
+  usuario_id: number;
+  usuario: { nombre: string; apellido: string; email?: string };
+  bio?: string | null;
+  precioClaseGrupal?: Monto;
+  precioClaseIndividual?: Monto;
+  manoDominante?: string | null;
+  linkAjpp?: string | null;
+  promedioCalificacion?: Monto;
+}
+
+export interface ClubResumen {
+  club_id?: number;
+  nombre: string;
+  ubicacion?: string | null;
+  ciudad?: string | null;
+}
+
+export interface ClaseListado {
+  id: number;
+  fecha_hora: string;
+  duracion_minutos: number;
+  nivel?: string | null;
+  capacidad_maxima: number;
+  descripcion?: string | null;
+  tipo_clase: TipoClase;
+  estado: EstadoClase;
+  club?: ClubResumen | null;
+  profesor?: ProfesorResumen;
+  alumnos_inscritos?: AlumnoInscripto[];
+}
+
+export interface AlumnoInscripto {
+  usuario_id: number;
+  nivel?: string | null;
+  posicion?: string | null;
+  usuario?: { nombre: string; apellido: string; email: string; telefono?: string };
+}
+
+/** Usuario tal como lo devuelve el panel de administración (sin contraseña). */
+export interface UsuarioAdmin {
+  id: number;
+  nombre: string;
+  apellido: string;
+  email: string;
+  telefono: string;
+  tipoUsuario: UserRole;
+  activo: boolean;
+  fecha_registro: string;
+}
+
+export interface Resenia {
+  id: number;
+  calificacion: number;
+  comentario?: string | null;
+  fecha_creacion: string;
+  alumno: {
+    usuario_id: number;
+    usuario?: { nombre: string; apellido: string };
   };
 }
 

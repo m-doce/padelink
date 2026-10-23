@@ -6,6 +6,9 @@ import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import Modal from "@/components/Modal";
 import { api } from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
+import { formatPrecio } from "@/lib/format";
+import { totalReserva } from "@/lib/clases";
 import { toast } from "sonner";
 
 // --- TYPES ---
@@ -254,13 +257,13 @@ export default function ReservePage({ params }: { params: Promise<{ id: string }
                     {reservaTipo === "individual" ? (
                       <div className="flex justify-between text-sm">
                         <span className="text-zinc-500 dark:text-zinc-400">Precio individual</span>
-                        <span>${clase.profesor?.precioClaseIndividual}</span>
+                        <span className="tabular-nums">{formatPrecio(clase.profesor?.precioClaseIndividual)}</span>
                       </div>
                     ) : (
                       <>
                         <div className="flex justify-between text-sm">
                           <span className="text-zinc-500 dark:text-zinc-400">Precio por persona</span>
-                          <span>${clase.profesor?.precioClaseGrupal}</span>
+                          <span className="tabular-nums">{formatPrecio(clase.profesor?.precioClaseGrupal)}</span>
                         </div>
                         <div className="flex justify-between text-sm">
                           <span className="text-zinc-500 dark:text-zinc-400">Cantidad personas</span>
@@ -273,23 +276,19 @@ export default function ReservePage({ params }: { params: Promise<{ id: string }
                   // Clase GRUPAL: solo precio grupal
                   <div className="flex justify-between text-sm">
                     <span className="text-zinc-500 dark:text-zinc-400">Precio por persona</span>
-                    <span>${clase.profesor?.precioClaseGrupal}</span>
+                    <span className="tabular-nums">{formatPrecio(clase.profesor?.precioClaseGrupal)}</span>
                   </div>
                 )}
                 
                 <div className="flex justify-between text-sm">
                   <span className="text-zinc-500 dark:text-zinc-400">Cargos de servicio</span>
-                  <span>$0</span>
+                  <span>Sin cargo</span>
                 </div>
                 
                 <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800 flex justify-between font-bold text-lg">
                   <span>Total</span>
-                  <span className="text-lime-600 dark:text-lime-400">
-                    ${clase.tipo_clase === "LIBRE" 
-                      ? (reservaTipo === "individual" 
-                          ? clase.profesor?.precioClaseIndividual 
-                          : (clase.profesor?.precioClaseGrupal * reservaCantidad))
-                      : clase.profesor?.precioClaseGrupal}
+                  <span className="tabular-nums text-lime-600 dark:text-lime-400">
+                    {formatPrecio(totalReserva(clase.tipo_clase, clase.profesor, reservaTipo, reservaCantidad))}
                   </span>
                 </div>
               </div>

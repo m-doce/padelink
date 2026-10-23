@@ -1,308 +1,288 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import Link from "next/link";
+import { toast } from "sonner";
 import Navbar from "@/components/Navbar";
 import Modal from "@/components/Modal";
-import { api } from "@/lib/api";
-import { toast } from "sonner";
+import FilaClase from "@/components/panel/FilaClase";
+import { BOTON, EncabezadoPanel, GrillaDatos, Pestanas, Tarjeta, TarjetaDato } from "@/components/panel/ElementosPanel";
+import { Campo, Desplegable, Entrada } from "@/components/ui/Formulario";
+import { Avatar } from "@/components/ui/Elementos";
+import { CargandoTarjetas, MensajeError, SinResultados } from "@/components/ui/EstadosListado";
 import { useAuth } from "@/context/AuthContext";
-import { AlumnoProfile, Reserva } from "@/types";
+import { useApiGet } from "@/hooks/useApiGet";
+import { api } from "@/lib/api";
+import { NIVELES } from "@/lib/clases";
+import { edadDesde, formatFechaCorta, formatNivel, nombreCompleto } from "@/lib/format";
+import { resumenAlumno } from "@/lib/paneles";
+import type { AlumnoProfile, ClaseListado } from "@/types";
 
-// Helper to calculate age from date string
-function calculateAge(birthDate: string) {
-  if (!birthDate) return 0;
-  const today = new Date();
-  const birth = new Date(birthDate);
-  let age = today.getFullYear() - birth.getFullYear();
-  const m = today.getMonth() - birth.getMonth();
-  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
-    age--;
-  }
-  return age;
-}
+type PestanaAlumno = "proximas" | "historial" | "perfil";
 
 export default function StudentDashboard() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<"reservations" | "profile">("reservations");
-  const [profile, setProfile] = useState<AlumnoProfile | null>(null);
-  const [reservations, setReservations] = useState<Reserva[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const id = user?.usuario_id;
+  const perfilApi = useApiGet<AlumnoProfile>(id ? `/alumno/${id}` : null);
+  const reservasApi = useApiGet<ClaseListado[]>(id ? `/clase/alumno/${id}` : null);
 
-  // Modal de confirmación de cancelación
-  const [showCancelModal, setShowCancelModal] = useState(false);
-  const [resToCancel, setResToCancel] = useState<number | null>(null);
+  const [pestana, setPestana] = useState<PestanaAlumno>("proximas");
+  const [aCancelar, setACancelar] = useState<ClaseListado | null>(null);
+  // Reservas canceladas en esta sesión: se ocultan sin volver a pedir todo al servidor
+  const [canceladas, setCanceladas] = useState<number[]>([]);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!user) return;
+  const reservas = useMemo(() => (reservasApi.data ?? []).filter((c) => !canceladas.includes(c.id)), [reservasApi.data, canceladas]);
+  const resumen = useMemo(() => resumenAlumno(reservas), [reservas]);
 
-      try {
-        const [profData, resData] = await Promise.all([
-          api.get<AlumnoProfile>(`/alumno/${user.usuario_id}`),
-          api.get<Reserva[]>(`/clase/alumno/${user.usuario_id}`)
-        ]);
-        setProfile(profData);
-        setReservations(resData);
-      } catch (err: unknown) {
-        const errorMsg = err instanceof Error ? err.message : "Error al cargar datos";
-        setError(errorMsg);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, [user]);
-
-  const handleCancelReservation = async () => {
-    if (!resToCancel || !user) return;
-    
+  const cancelarReserva = async () => {
+    if (!aCancelar || !id) return;
     try {
-      await api.delete(`/clase/${resToCancel}/reserve/${user.usuario_id}`); 
-      setReservations(reservations.filter((r) => r.id !== resToCancel));
-      setResToCancel(null);
-      toast.success("Reserva cancelada correctamente");
+      await api.delete(`/clase/${aCancelar.id}/reserve/${id}`);
+      setCanceladas((actual) => [...actual, aCancelar.id]);
+      toast.success("Reserva cancelada", { description: "Liberaste tu lugar para otro alumno." });
     } catch (err: unknown) {
-      const errorMsg = err instanceof Error ? err.message : "No se pudo cancelar la reserva.";
-      toast.error("Error al cancelar", {
-        description: errorMsg,
-      });
+      toast.error("No se pudo cancelar", { description: err instanceof Error ? err.message : undefined });
+    } finally {
+      setACancelar(null);
     }
   };
 
-  const handleProfileUpdate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!profile || !user) return;
+  if (!user) return null;
 
-    try {
-      const payload = {
-        fecha_nacimiento: profile.fecha_nacimiento,
-        edad: calculateAge(profile.fecha_nacimiento),
-        nivel: profile.nivel,
-        mano_dominante: profile.mano_dominante,
-        genero: profile.genero,
-        posicion: profile.posicion,
-      };
-      await api.patch(`/alumno/${user.usuario_id}`, payload);
-      toast.success("¡Perfil actualizado!", {
-        description: "Tus datos se guardaron correctamente.",
-      });
-    } catch (err: unknown) {
-      const errorMsg = err instanceof Error ? err.message : "No se pudo guardar la información.";
-      toast.error("Error al actualizar", {
-        description: errorMsg,
-      });
-    }
-  };
-
-  if (loading) return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col">
-      <Navbar />
-      <div className="flex-1 flex items-center justify-center">
-        <p className="animate-pulse text-zinc-500">Cargando panel...</p>
-      </div>
-    </div>
-  );
-
-  if (error) return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col">
-      <Navbar />
-      <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-        <div className="bg-red-50 text-red-600 p-4 rounded-lg border border-red-200 mb-4">
-          <p className="font-bold">Error</p>
-          <p>{error}</p>
-        </div>
-        <button onClick={() => window.location.reload()} className="bg-zinc-900 text-white px-4 py-2 rounded-md text-sm">
-          Reintentar
-        </button>
-      </div>
-    </div>
-  );
-
-  if (!profile) return null;
+  const cargando = perfilApi.loading || reservasApi.loading;
+  const error = perfilApi.error || reservasApi.error;
+  const perfil = perfilApi.data;
+  const descripcionPerfil = [perfil?.nivel && formatNivel(perfil.nivel), perfil?.posicion === "REVES" ? "Revés" : perfil?.posicion === "DRIVE" ? "Drive" : null]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 font-sans text-zinc-900 dark:text-zinc-50 flex flex-col">
+    <div className="flex min-h-screen flex-col bg-zinc-50 font-sans text-zinc-900 dark:bg-zinc-950 dark:text-zinc-50">
       <Navbar />
 
-      <div className="flex flex-1 flex-col md:flex-row">
-        {/* Sidebar */}
-        <aside className="w-full md:w-64 bg-white dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 p-6">
-          <div className="mb-8 px-4">
-             <h2 className="text-xl font-bold">{user?.nombre} {user?.apellido}</h2>
-             <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">{user?.email}</p>
-          </div>
-          <nav className="flex flex-col gap-2">
-            <button
-              onClick={() => setActiveTab("reservations")}
-              className={`text-left px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'reservations' ? 'bg-lime-100 text-lime-800 dark:bg-lime-900/30 dark:text-lime-400' : 'text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800'}`}
-            >
-              Mis Reservas
-            </button>
-            <button
-              onClick={() => setActiveTab("profile")}
-              className={`text-left px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'profile' ? 'bg-lime-100 text-lime-800 dark:bg-lime-900/30 dark:text-lime-400' : 'text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800'}`}
-            >
-              Mi Perfil
-            </button>
-          </nav>
-        </aside>
+      <main className="container mx-auto flex-1 px-4 py-8 sm:px-6 lg:px-12">
+        <EncabezadoPanel
+          usuario={user}
+          saludo={`Hola, ${user.nombre}`}
+          subtitulo={descripcionPerfil || "Completá tu perfil para que los profesores te conozcan."}
+          acciones={
+            <Link href="/" className={BOTON.primario}>
+              Buscar clases
+            </Link>
+          }
+        />
 
-        {/* Content Area */}
-        <main className="flex-1 p-6 md:p-12 overflow-y-auto">
-          {/* --- RESERVATIONS TAB --- */}
-          {activeTab === "reservations" && (
-            <div>
-              <div className="flex justify-between items-center mb-8">
-                <h1 className="text-2xl font-bold">Mis Próximas Clases</h1>
-                <Link
-                  href="/professors"
-                  className="bg-lime-500 hover:bg-lime-600 text-white dark:bg-lime-400 dark:text-zinc-900 dark:hover:bg-lime-500 px-4 py-2 rounded-md text-sm font-medium transition-colors"
-                >
-                  Buscar más clases
-                </Link>
-              </div>
+        {cargando ? (
+          <CargandoTarjetas cantidad={4} />
+        ) : error ? (
+          <MensajeError
+            mensaje={error}
+            onReintentar={() => {
+              perfilApi.recargar();
+              reservasApi.recargar();
+            }}
+          />
+        ) : (
+          <>
+            <GrillaDatos>
+              <TarjetaDato
+                etiqueta="Próxima clase"
+                tono="lima"
+                valor={resumen.proxima ? formatFechaCorta(new Date(resumen.proxima.fecha_hora)) : "—"}
+                detalle={resumen.proxima?.profesor ? `con ${nombreCompleto(resumen.proxima.profesor.usuario)}` : "No tenés clases reservadas"}
+              />
+              <TarjetaDato etiqueta="Clases reservadas" valor={resumen.proximas.length} detalle="próximas" />
+              <TarjetaDato etiqueta="Clases tomadas" valor={resumen.pasadas.length} detalle={`con ${resumen.profesores.length} ${resumen.profesores.length === 1 ? "profesor" : "profesores"}`} />
+              <TarjetaDato etiqueta="Horas entrenadas" valor={resumen.horasEntrenadas.toLocaleString("es-AR", { maximumFractionDigits: 1 })} detalle="en total" />
+            </GrillaDatos>
 
-              <div className="space-y-4">
-                {reservations.map((res) => {
-                  const fecha = new Date(res.fecha_hora);
-                  return (
-                    <div key={res.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-5 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
-                      <div className="mb-4 sm:mb-0">
-                        <div className="flex items-center gap-3 mb-1">
-                          <span className="text-lg font-bold">
-                            {fecha.toLocaleDateString("es-ES")} - {fecha.toLocaleTimeString("es-ES", { hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                        </div>
-                        <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                          <b>Profesor:</b> {res.profesor?.usuario.nombre} {res.profesor?.usuario.apellido}
-                        </p>
-                        <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-                          {res.duracion_minutos} min • Nivel {res.nivel}
-                        </p>
-                      </div>
-                      <div className="flex gap-2 w-full sm:w-auto">
-                        <button
-                          onClick={() => {
-                            setResToCancel(res.id);
-                            setShowCancelModal(true);
-                          }}
-                          className="flex-1 sm:flex-none px-4 py-2 border border-red-200 text-red-600 rounded-lg text-sm hover:bg-red-50 dark:border-red-900/50 dark:hover:bg-red-900/20 transition"
+            <Pestanas
+              activa={pestana}
+              onCambiar={setPestana}
+              pestanas={[
+                { id: "proximas", etiqueta: "Próximas clases", cantidad: resumen.proximas.length },
+                { id: "historial", etiqueta: "Historial", cantidad: resumen.pasadas.length },
+                { id: "perfil", etiqueta: "Mi perfil" },
+              ]}
+            />
+
+            {pestana === "proximas" &&
+              (resumen.proximas.length === 0 ? (
+                <SinResultados mensaje="No tenés clases reservadas. ¡Buscá una y reservá tu lugar!" />
+              ) : (
+                <div className="space-y-3">
+                  {resumen.proximas.map((clase) => (
+                    <FilaClase
+                      key={clase.id}
+                      clase={clase}
+                      mostrarProfesor
+                      mostrarInscriptos={false}
+                      acciones={
+                        <>
+                          {clase.profesor && (
+                            <Link href={`/professors/${clase.profesor.usuario_id}`} className={BOTON.secundario}>
+                              Ver profesor
+                            </Link>
+                          )}
+                          <button type="button" onClick={() => setACancelar(clase)} className={BOTON.peligro}>
+                            Cancelar
+                          </button>
+                        </>
+                      }
+                    />
+                  ))}
+                </div>
+              ))}
+
+            {pestana === "historial" && (
+              <div className="space-y-6">
+                {resumen.profesores.length > 0 && (
+                  <Tarjeta titulo="Tus profesores" descripcion="Contale a otros alumnos cómo fue tu experiencia.">
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                      {resumen.profesores.map(({ profesor, clasesTomadas }) => (
+                        <Link
+                          key={profesor.usuario_id}
+                          href={`/professors/${profesor.usuario_id}`}
+                          className="flex items-center gap-3 rounded-xl border border-zinc-200 p-3 transition hover:border-lime-400 dark:border-zinc-800"
                         >
-                          Cancelar Reserva
-                        </button>
-                      </div>
+                          <Avatar usuario={profesor.usuario} tamano="sm" />
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium">{nombreCompleto(profesor.usuario)}</p>
+                            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                              {clasesTomadas} {clasesTomadas === 1 ? "clase" : "clases"}
+                            </p>
+                          </div>
+                          <span className="text-xs font-medium text-lime-600 dark:text-lime-400">Calificar →</span>
+                        </Link>
+                      ))}
                     </div>
-                  );
-                })}
+                  </Tarjeta>
+                )}
 
-                {reservations.length === 0 && (
-                  <div className="text-center py-12 text-zinc-500 border-2 border-dashed border-zinc-200 rounded-xl">
-                    Aún no tienes ninguna clase reservada.
+                {resumen.pasadas.length === 0 ? (
+                  <SinResultados mensaje="Todavía no tomaste ninguna clase." />
+                ) : (
+                  <div className="space-y-3">
+                    {resumen.pasadas.map((clase) => (
+                      <FilaClase key={clase.id} clase={clase} mostrarProfesor mostrarInscriptos={false} />
+                    ))}
                   </div>
                 )}
               </div>
-            </div>
-          )}
+            )}
 
-          {/* --- PROFILE TAB --- */}
-          {activeTab === "profile" && (
-            <div className="max-w-2xl">
-              <h1 className="text-2xl font-bold mb-8">Editar Perfil de Alumno</h1>
-              <form onSubmit={handleProfileUpdate} className="space-y-6 bg-white dark:bg-zinc-900 p-8 rounded-xl border border-zinc-200 dark:border-zinc-800">
-                
-                <div className="grid grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Fecha de nacimiento</label>
-                    <input
-                      type="date"
-                      value={profile.fecha_nacimiento}
-                      onChange={(e) => setProfile({ ...profile, fecha_nacimiento: e.target.value })}
-                      className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-lime-500 focus:ring-1 focus:ring-lime-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Edad</label>
-                    <div className="w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-500 dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-400">
-                      {calculateAge(profile.fecha_nacimiento)} años
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Nivel</label>
-                    <select
-                      value={profile.nivel}
-                      onChange={(e) => setProfile({ ...profile, nivel: e.target.value })}
-                      className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:ring-1 focus:ring-lime-500 outline-none dark:bg-zinc-950 dark:border-zinc-700"
-                    >
-                      <option value="basico">Básico</option>
-                      <option value="intermedio">Intermedio</option>
-                      <option value="avanzado">Avanzado</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Posición</label>
-                    <select
-                      value={profile.posicion}
-                      onChange={(e) => setProfile({ ...profile, posicion: e.target.value })}
-                      className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:ring-1 focus:ring-lime-500 outline-none dark:bg-zinc-950 dark:border-zinc-700"
-                    >
-                      <option value="DRIVE">Drive</option>
-                      <option value="REVES">Revés</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Género</label>
-                    <select
-                      value={profile.genero}
-                      onChange={(e) => setProfile({ ...profile, genero: e.target.value })}
-                      className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:ring-1 focus:ring-lime-500 outline-none dark:bg-zinc-950 dark:border-zinc-700"
-                    >
-                      <option value="MASCULINO">Masculino</option>
-                      <option value="FEMENINO">Femenino</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Mano Dominante</label>
-                    <select
-                      value={profile.mano_dominante}
-                      onChange={(e) => setProfile({ ...profile, mano_dominante: e.target.value })}
-                      className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:ring-1 focus:ring-lime-500 outline-none dark:bg-zinc-950 dark:border-zinc-700"
-                    >
-                      <option value="diestro">Diestro</option>
-                      <option value="zurdo">Zurdo</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800 flex justify-end">
-                  <button type="submit" className="bg-zinc-900 text-white px-6 py-2 rounded-md text-sm font-medium hover:bg-zinc-800 dark:bg-lime-400 dark:text-zinc-900 dark:hover:bg-lime-500 transition">
-                    Guardar Cambios
-                  </button>
-                </div>
-              </form>
-            </div>
-          )}
-        </main>
-      </div>
+            {pestana === "perfil" && perfil && <FormularioPerfilAlumno usuarioId={user.usuario_id} perfilInicial={perfil} onGuardado={() => perfilApi.recargar({ silencioso: true })} />}
+          </>
+        )}
+      </main>
 
       <Modal
-        isOpen={showCancelModal}
-        onClose={() => setShowCancelModal(false)}
-        onConfirm={handleCancelReservation}
+        isOpen={aCancelar !== null}
+        onClose={() => setACancelar(null)}
+        onConfirm={cancelarReserva}
         title="¿Cancelar reserva?"
-        description="Esta acción liberará tu cupo para otros alumnos. No podrás deshacerla."
-        confirmLabel="Confirmar Cancelación"
+        description={aCancelar ? `Vas a liberar tu lugar en la clase del ${formatFechaCorta(new Date(aCancelar.fecha_hora))}.` : ""}
+        confirmLabel="Sí, cancelar"
         cancelLabel="Volver"
         variant="danger"
       />
+    </div>
+  );
+}
 
+function FormularioPerfilAlumno({ usuarioId, perfilInicial, onGuardado }: { usuarioId: number; perfilInicial: AlumnoProfile; onGuardado: () => void }) {
+  const { user } = useAuth();
+  const [perfil, setPerfil] = useState(perfilInicial);
+  const [guardando, setGuardando] = useState(false);
+  const edad = edadDesde(perfil.fecha_nacimiento);
+
+  const cambiar = <K extends keyof AlumnoProfile>(clave: K, valor: AlumnoProfile[K]) => setPerfil((p) => ({ ...p, [clave]: valor }));
+
+  const guardar = async (e: FormEvent) => {
+    e.preventDefault();
+    setGuardando(true);
+    try {
+      // Solo se envían los campos con valor (el backend valida cada uno)
+      const datos = {
+        fecha_nacimiento: perfil.fecha_nacimiento || undefined,
+        edad: edad ?? undefined,
+        nivel: perfil.nivel || undefined,
+        mano_dominante: perfil.mano_dominante || undefined,
+        genero: perfil.genero || undefined,
+        posicion: perfil.posicion || undefined,
+      };
+      await api.patch(`/alumno/${usuarioId}`, datos);
+      toast.success("Perfil actualizado");
+      onGuardado();
+    } catch (err: unknown) {
+      toast.error("No se pudo guardar", { description: err instanceof Error ? err.message : undefined });
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  return (
+    <div className="grid gap-6 lg:grid-cols-[18rem_1fr]">
+      <Tarjeta titulo="Tu cuenta">
+        <dl className="space-y-3 text-sm">
+          <div>
+            <dt className="text-zinc-500 dark:text-zinc-400">Nombre</dt>
+            <dd className="font-medium">{user ? nombreCompleto(user) : ""}</dd>
+          </div>
+          <div>
+            <dt className="text-zinc-500 dark:text-zinc-400">Email</dt>
+            <dd className="break-all font-medium">{user?.email}</dd>
+          </div>
+          <div>
+            <dt className="text-zinc-500 dark:text-zinc-400">Edad</dt>
+            <dd className="font-medium">{edad !== null ? `${edad} años` : "Sin cargar"}</dd>
+          </div>
+        </dl>
+      </Tarjeta>
+
+      <Tarjeta titulo="Datos de juego" descripcion="Ayudan a los profesores a armar grupos de tu nivel.">
+        <form onSubmit={guardar} className="grid gap-5 sm:grid-cols-2">
+          <Campo etiqueta="Fecha de nacimiento">
+            <Entrada type="date" value={perfil.fecha_nacimiento ?? ""} onChange={(e) => cambiar("fecha_nacimiento", e.target.value)} />
+          </Campo>
+          <Campo etiqueta="Nivel">
+            <Desplegable value={perfil.nivel ?? ""} onChange={(e) => cambiar("nivel", e.target.value)}>
+              <option value="">Elegí tu nivel</option>
+              {NIVELES.map((n) => (
+                <option key={n.id} value={n.id}>
+                  {n.etiqueta}
+                </option>
+              ))}
+            </Desplegable>
+          </Campo>
+          <Campo etiqueta="Posición">
+            <Desplegable value={perfil.posicion ?? ""} onChange={(e) => cambiar("posicion", e.target.value)}>
+              <option value="">Elegí tu posición</option>
+              <option value="DRIVE">Drive</option>
+              <option value="REVES">Revés</option>
+            </Desplegable>
+          </Campo>
+          <Campo etiqueta="Mano dominante">
+            <Desplegable value={perfil.mano_dominante ?? ""} onChange={(e) => cambiar("mano_dominante", e.target.value)}>
+              <option value="">Elegí una opción</option>
+              <option value="diestro">Diestro</option>
+              <option value="zurdo">Zurdo</option>
+            </Desplegable>
+          </Campo>
+          <Campo etiqueta="Género">
+            <Desplegable value={perfil.genero ?? ""} onChange={(e) => cambiar("genero", e.target.value)}>
+              <option value="">Prefiero no decirlo</option>
+              <option value="MASCULINO">Masculino</option>
+              <option value="FEMENINO">Femenino</option>
+            </Desplegable>
+          </Campo>
+          <div className="flex items-end justify-end sm:col-span-2">
+            <button type="submit" disabled={guardando} className={BOTON.primario}>
+              {guardando ? "Guardando..." : "Guardar cambios"}
+            </button>
+          </div>
+        </form>
+      </Tarjeta>
     </div>
   );
 }

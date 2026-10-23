@@ -5,7 +5,9 @@ import { Clase } from '../../src/clase/entities/clase.entity';
 import { Alumno } from '../../src/alumno/entities/alumno.entity';
 import { ClubService } from '../../src/club/club.service';
 import { ProfesorService } from '../../src/profesor/profesor.service';
-import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { UserRole } from '../../src/usuario/entities/usuario.entity';
+import { EstadoEnum } from '../../src/clase/entities/clase.entity';
 
 describe('ClaseService', () => {
   let service: ClaseService;
@@ -81,6 +83,61 @@ describe('ClaseService', () => {
       claseRepositoryMock.findOne.mockResolvedValue(null);
 
       await expect(service.addAlumno(999, 2)).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('estado de la clase', () => {
+    it('pasa a COMPLETA cuando se llena el cupo', async () => {
+      const clase: any = { id: 1, alumnos_inscritos: [{ usuario_id: 3 }], capacidad_maxima: 2, estado: EstadoEnum.DISPONIBLE };
+      claseRepositoryMock.findOne.mockResolvedValue(clase);
+      alumnoRepositoryMock.findOne.mockResolvedValue({ usuario_id: 2 });
+      claseRepositoryMock.save.mockImplementation(async (c: any) => c);
+
+      const result = await service.addAlumno(1, 2);
+      expect(result.estado).toBe(EstadoEnum.COMPLETA);
+    });
+
+    it('vuelve a DISPONIBLE cuando alguien cancela', async () => {
+      const clase: any = { id: 1, alumnos_inscritos: [{ usuario_id: 2 }, { usuario_id: 3 }], capacidad_maxima: 2, estado: EstadoEnum.COMPLETA };
+      claseRepositoryMock.findOne.mockResolvedValue(clase);
+      claseRepositoryMock.save.mockImplementation(async (c: any) => c);
+
+      const result = await service.removeAlumno(1, 2);
+      expect(result.estado).toBe(EstadoEnum.DISPONIBLE);
+    });
+  });
+
+  describe('permisos', () => {
+    const profesorDueno = { id: 10, email: 'p@a.com', role: UserRole.PROFESOR };
+    const otroProfesor = { id: 11, email: 'o@a.com', role: UserRole.PROFESOR };
+    const alumno = { id: 2, email: 'a@a.com', role: UserRole.ALUMNO };
+
+    beforeEach(() => {
+      claseRepositoryMock.delete = jest.fn();
+      claseRepositoryMock.findOne.mockResolvedValue({
+        id: 1, profesor: { usuario_id: 10 }, alumnos_inscritos: [], capacidad_maxima: 4,
+      });
+    });
+
+    it('el profesor dueño puede borrar su clase', async () => {
+      await service.remove(1, profesorDueno);
+      expect(claseRepositoryMock.delete).toHaveBeenCalledWith(1);
+    });
+
+    it('otro profesor no puede borrar la clase', async () => {
+      await expect(service.remove(1, otroProfesor)).rejects.toThrow(ForbiddenException);
+    });
+
+    it('un alumno no puede cancelar la reserva de otro alumno', async () => {
+      await expect(service.cancelarInscripcion(1, 99, alumno)).rejects.toThrow(ForbiddenException);
+    });
+
+    it('un alumno siempre se inscribe a sí mismo aunque mande otro id', async () => {
+      alumnoRepositoryMock.findOne.mockResolvedValue({ usuario_id: 2 });
+      claseRepositoryMock.save.mockImplementation(async (c: any) => c);
+
+      await service.inscribirAlumno(1, 99, alumno);
+      expect(alumnoRepositoryMock.findOne).toHaveBeenCalledWith({ where: { usuario_id: 2 } });
     });
   });
 });

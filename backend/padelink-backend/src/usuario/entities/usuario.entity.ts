@@ -15,10 +15,12 @@ export class Usuario {
  @Column({default: true})
  activo: boolean;
 
- @Column()
+ @Column({ unique: true })
  email: string;
 
- @Column()
+ // No se incluye en las consultas por defecto: así el hash nunca viaja en las respuestas de la API.
+ // Solo el login lo pide explícitamente (ver UserService.findByEmailConPassword).
+ @Column({ select: false })
  password: string;
 
  @Column()

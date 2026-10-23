@@ -1,10 +1,7 @@
 import { ManoDominante } from "../entities/profesor.entity";
-import { IsNumber, IsNotEmpty, IsOptional, IsString, IsEnum } from 'class-validator';
+import { IsNumber, IsOptional, IsString, IsEnum, Min } from 'class-validator';
 
 export class UpdateProfesorDto {
-    @IsNumber()
-    @IsOptional()
-    usuario_id?: number;
 
     @IsString()
     @IsOptional()
@@ -20,10 +17,6 @@ export class UpdateProfesorDto {
 
     @IsString()
     @IsOptional()
-    password?: string;
-
-    @IsString()
-    @IsOptional()
     telefono?: string;
 
     @IsString()
@@ -31,8 +24,14 @@ export class UpdateProfesorDto {
     bio?: string;
 
     @IsNumber()
+    @Min(0)
     @IsOptional()
     precioClaseIndividual?: number;
+
+    @IsNumber()
+    @Min(0)
+    @IsOptional()
+    precioClaseGrupal?: number;
 
     @IsEnum(ManoDominante)
     @IsOptional()

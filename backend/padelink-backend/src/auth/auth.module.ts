@@ -6,6 +6,7 @@ import { AuthController } from './auth.controller';
 import { UserModule } from '../usuario/user.module';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { obtenerJwtSecret } from './jwt-secret';
 
 @Module({
   imports: [
@@ -16,7 +17,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         global: true,
-        secret: configService.get<string>('JWT_SECRET') || 'secretKey',
+        secret: obtenerJwtSecret(configService),
         signOptions: { expiresIn: '1d' },
       }),
     }),

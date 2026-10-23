@@ -4,11 +4,12 @@ import { AdminService } from '../../src/admin/admin.service';
 
 describe('AdminController', () => {
   let controller: AdminController;
-  let adminServiceMock: { findAll: jest.Mock };
+  let adminServiceMock: { findAllUsers: jest.Mock; removeUser: jest.Mock };
 
   beforeEach(async () => {
     adminServiceMock = {
-      findAll: jest.fn(),
+      findAllUsers: jest.fn(),
+      removeUser: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -23,11 +24,16 @@ describe('AdminController', () => {
     expect(controller).toBeDefined();
   });
 
-  it('should return all admins from the service', async () => {
-    const admins = [{ usuario_id: 1 }];
-    adminServiceMock.findAll.mockResolvedValue(admins);
+  it('should return all users from the service', async () => {
+    const users = [{ id: 1, email: 'a@a.com' }];
+    adminServiceMock.findAllUsers.mockResolvedValue(users);
 
-    await expect(controller.findAll()).resolves.toEqual(admins);
-    expect(adminServiceMock.findAll).toHaveBeenCalledTimes(1);
+    await expect(controller.findAll()).resolves.toEqual(users);
+    expect(adminServiceMock.findAllUsers).toHaveBeenCalledTimes(1);
+  });
+
+  it('should pass the requesting admin id when removing a user', async () => {
+    await controller.remove('5', { user: { id: 1 } });
+    expect(adminServiceMock.removeUser).toHaveBeenCalledWith(5, 1);
   });
 });

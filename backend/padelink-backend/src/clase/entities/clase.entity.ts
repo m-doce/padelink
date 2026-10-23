@@ -20,7 +20,8 @@ export class Clase {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @ManyToOne(() => Profesor)
+    // Si se elimina al profesor, se eliminan sus clases (si no, la base rechaza el borrado)
+    @ManyToOne(() => Profesor, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'profesorId'})
     profesor: Profesor;
 

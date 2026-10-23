@@ -29,6 +29,15 @@ export class UserService {
         return this.userRepository.findOne({ where: { email } });
     }
 
+    /** Incluye el hash de la contraseña. Usar solo para validar credenciales. */
+    async findByEmailConPassword(email: string): Promise<Usuario | null> {
+        return this.userRepository
+            .createQueryBuilder('usuario')
+            .addSelect('usuario.password')
+            .where('usuario.email = :email', { email })
+            .getOne();
+    }
+
     async update(id: number, updateUsuarioDto: UpdateUsuarioDto): Promise<Usuario | null> {
         if (updateUsuarioDto.password) {
             updateUsuarioDto.password = await this.passwordService.hashPassword(updateUsuarioDto.password);
@@ -38,6 +47,10 @@ export class UserService {
     }
 
     async create(createUsuarioDto: CreateUsuarioDto): Promise<Usuario> {
+        const existente = await this.findByEmail(createUsuarioDto.email);
+        if (existente) {
+            throw new BadRequestException('El email ya está registrado');
+        }
         try{
             const hashedPassword = await this.passwordService.hashPassword(createUsuarioDto.password);
             const user = this.userRepository.create({

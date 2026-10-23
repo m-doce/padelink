@@ -1,6 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AlumnoController } from '../../src/alumno/alumno.controller';
 import { AlumnoService } from '../../src/alumno/alumno.service';
+import { ForbiddenException } from '@nestjs/common';
+import { UserRole } from '../../src/usuario/entities/usuario.entity';
 
 describe('AlumnoController', () => {
   let controller: AlumnoController;
@@ -45,11 +47,24 @@ describe('AlumnoController', () => {
     expect(alumnoServiceMock.findOne).toHaveBeenCalledWith(1);
   });
 
-  it('should update an alumno', async () => {
+  it('should let an alumno update their own profile', async () => {
     const dto = { nivel: 'intermedio' };
     alumnoServiceMock.update.mockResolvedValue({ affected: 1 });
 
-    await expect(controller.update(1, dto)).resolves.toEqual({ affected: 1 });
+    const req = { user: { id: 1, email: 'a@a.com', role: UserRole.ALUMNO } };
+    await expect(controller.update(1, dto, req)).resolves.toEqual({ affected: 1 });
     expect(alumnoServiceMock.update).toHaveBeenCalledWith(1, dto);
+  });
+
+  it('should not let an alumno update another profile', () => {
+    const req = { user: { id: 2, email: 'b@a.com', role: UserRole.ALUMNO } };
+    expect(() => controller.update(1, { nivel: 'avanzado' }, req)).toThrow(ForbiddenException);
+    expect(alumnoServiceMock.update).not.toHaveBeenCalled();
+  });
+
+  it('should let an admin update any profile', async () => {
+    alumnoServiceMock.update.mockResolvedValue({ affected: 1 });
+    const req = { user: { id: 99, email: 'admin@a.com', role: UserRole.ADMIN } };
+    await expect(controller.update(1, { nivel: 'avanzado' }, req)).resolves.toEqual({ affected: 1 });
   });
 });

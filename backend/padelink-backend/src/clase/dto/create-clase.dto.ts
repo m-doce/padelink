@@ -4,9 +4,10 @@ import { EstadoEnum } from '../entities/clase.entity';
 
 export class CreateClaseDto {
 
+  // Un profesor no lo envía: se toma de su token. El admin sí debe indicarlo.
   @IsInt()
-  @IsNotEmpty()
-  profesorId: number;
+  @IsOptional()
+  profesorId?: number;
 
   @IsInt()
   @IsNotEmpty()
@@ -21,8 +22,8 @@ export class CreateClaseDto {
   duracion_minutos: number;
 
   @IsString()
-  @IsNotEmpty()
-  nivel: string;
+  @IsOptional()
+  nivel?: string;
 
   @IsInt()
   @Min(1)

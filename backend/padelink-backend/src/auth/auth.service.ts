@@ -3,7 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { UserService } from '../usuario/usuario.service';
 import { LoginDto } from './dto/login.dto';
 import { CreateUsuarioDto } from '../usuario/dto/create-usuario.dto';
-import * as bcrypt from 'bcrypt';
+import { PasswordService } from '../usuario/password.service';
 import { UserRole } from '../usuario/entities/usuario.entity';
 
 @Injectable()
@@ -22,7 +22,7 @@ export class AuthService {
   }
 
   async login(loginDto: LoginDto) {
-    const user = await this.userService.findByEmail(loginDto.email);
+    const user = await this.userService.findByEmailConPassword(loginDto.email);
 
     if (!user) {
       throw new UnauthorizedException('Credenciales inválidas');
@@ -32,6 +32,11 @@ export class AuthService {
 
     if (!isPasswordValid) {
       throw new UnauthorizedException('Credenciales inválidas');
+    }
+
+    // Un administrador puede desactivar cuentas desde su panel
+    if (user.activo === false) {
+      throw new ForbiddenException('Tu cuenta está desactivada. Contactá a un administrador.');
     }
 
     const payload = { sub: user.id, email: user.email, role: user.tipoUsuario };
